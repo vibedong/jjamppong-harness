@@ -11,6 +11,7 @@ This repository uses OuroSuper Harness.
 - Do not create a nested `F:/mptech/ourosuper-harness/` folder unless the user explicitly wants to maintain a separate copy of the template source.
 - Product or application work lives under `modules/` only after the Full Workflow has approved the relevant module structure.
 - The template-maintenance checkout at `F:/Folder/ourosuper-harness` is for updating the reusable harness template. Do not create product or application code there.
+- A project harness root must not keep `origin` pointed at `https://github.com/vibedong/ourosuper-harness.git`. That remote is only for the template-maintenance checkout.
 - If the repository role is unclear, stop and ask the user before writing product code, changing `modules/`, or starting request intake.
 
 ## New Project Request Trigger
@@ -18,6 +19,10 @@ This repository uses OuroSuper Harness.
 If the user says they want to make, start, or build a project, for example "ERP 프로젝트 만들고 싶어", first decide whether the current directory is the intended harness root or the template-maintenance checkout.
 
 - For a new project folder: create or clone the private project repository so the harness files land directly under the target folder, for example `F:/mptech/AGENTS.md`, not `F:/mptech/ourosuper-harness/AGENTS.md`.
+- If the user names `vibedong/ourosuper-harness.git` as the install source, treat it as a template source, not as the final project remote.
+- Unless the user gives a different project slug, derive the project slug from the target folder name. Example: `F:/mptech` uses `mptech`.
+- Create or verify the private project repository, for example `vibedong/mptech`, then set the project harness root `origin` to that project repository and push `main`.
+- Before reporting setup complete, verify `git remote -v` in the project harness root points to the project repository, not to `vibedong/ourosuper-harness.git`.
 - In the project harness root: record request intake in `harness/state/intake.md`, run OuroSuper Planning, then continue through the Full Workflow.
 - Do not create folders under `modules/` until `harness/state/module-structure.md` approves the module structure.
 
@@ -48,4 +53,5 @@ At the start of a substantive task, read:
 - Do not invent module folders outside the approved module structure.
 - Do not update `handoff.md` unless the user explicitly asks for next-chat handoff.
 - Do not write product code in the `ourosuper-harness` source/template repository.
+- Do not finish new project setup while the project harness root `origin` still points to `vibedong/ourosuper-harness.git`.
 - Do not change live harness rules directly from a new idea; use `proposals/` first.

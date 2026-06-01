@@ -99,6 +99,8 @@ F:/mptech
 
 ### Option B: GitHub CLI
 
+이 방식은 처음부터 프로젝트 전용 GitHub repository를 만들기 때문에 가장 안전합니다. 완료 후 `origin`은 `ourosuper-harness`가 아니라 새 project repository를 가리켜야 합니다.
+
 ```powershell
 Push-Location 'F:/'
 gh repo create <project-name> --private --template vibedong/ourosuper-harness --clone
@@ -114,6 +116,26 @@ Pop-Location
 ```
 
 이 예시는 `F:/mptech/AGENTS.md`가 생기는 구조를 만듭니다.
+
+완료 후 확인:
+
+```powershell
+git -C 'F:/mptech' remote -v
+```
+
+정상 결과는 아래처럼 project repository를 가리켜야 합니다.
+
+```text
+origin  https://github.com/vibedong/mptech.git (fetch)
+origin  https://github.com/vibedong/mptech.git (push)
+```
+
+아래처럼 template repository를 가리키면 아직 완료된 설치가 아닙니다.
+
+```text
+origin  https://github.com/vibedong/ourosuper-harness.git (fetch)
+origin  https://github.com/vibedong/ourosuper-harness.git (push)
+```
 
 ## Quick Start
 
@@ -140,6 +162,8 @@ private 프로젝트로 mptech 만들어줘.
 템플릿은 vibedong/ourosuper-harness를 쓰고,
 F:/mptech 바로 아래에 AGENTS.md, harness/, modules/가 생기게 해줘.
 F:/mptech/ourosuper-harness처럼 중첩하지 마.
+GitHub 원격은 vibedong/mptech로 만들고 origin도 그쪽으로 설정해줘.
+origin이 vibedong/ourosuper-harness.git이면 완료가 아니야.
 ```
 
 ## How It Works
@@ -208,12 +232,14 @@ Request Intake
 
 1. 설치 대상 폴더 자체가 하네스 루트입니다. 예: `F:/mptech`
 2. `F:/mptech/ourosuper-harness/`처럼 하네스를 중첩 설치하지 않습니다.
-3. 실제 제품 코드는 하네스 루트의 `modules/` 아래에만 작성합니다.
-4. `modules/` 아래에는 `harness/state/module-structure.md`가 승인된 뒤에만 코드를 만듭니다.
-5. 구현 전에는 계획 리뷰 질문을 거칩니다.
-6. 검증 전에는 완료라고 말하지 않습니다.
-7. `handoff.md`는 사용자가 요청할 때만 갱신합니다.
-8. 새 규칙 아이디어는 바로 live rule을 바꾸지 않고 `proposals/`에서 검토합니다.
+3. 실제 프로젝트 root의 `origin`은 project repository를 가리켜야 합니다. 예: `https://github.com/vibedong/mptech.git`
+4. 실제 프로젝트 root의 `origin`이 `https://github.com/vibedong/ourosuper-harness.git`이면 설치가 끝난 것이 아닙니다.
+5. 실제 제품 코드는 하네스 루트의 `modules/` 아래에만 작성합니다.
+6. `modules/` 아래에는 `harness/state/module-structure.md`가 승인된 뒤에만 코드를 만듭니다.
+7. 구현 전에는 계획 리뷰 질문을 거칩니다.
+8. 검증 전에는 완료라고 말하지 않습니다.
+9. `handoff.md`는 사용자가 요청할 때만 갱신합니다.
+10. 새 규칙 아이디어는 바로 live rule을 바꾸지 않고 `proposals/`에서 검토합니다.
 
 ## Sharing With A Friend
 
@@ -257,6 +283,20 @@ Full Workflow대로 진행해줘.
 한 단계 깊게 들어간 상태입니다. 원하는 구조는 `F:/mptech/AGENTS.md`와 `F:/mptech/modules/`가 바로 보이는 형태입니다.
 
 새로 만들 때는 project repository 이름을 `mptech`로 만들고 `F:/`에서 clone하거나, Codex에게 중첩하지 말고 `F:/mptech` 바로 아래에 하네스 파일을 두라고 말하세요.
+
+### origin이 ourosuper-harness를 가리킵니다
+
+프로젝트 root로 쓰려면 아직 완료된 상태가 아닙니다. `mptech` 같은 프로젝트 전용 private repository를 만들고 origin을 그쪽으로 바꿔야 합니다.
+
+예:
+
+```powershell
+gh repo create vibedong/mptech --private
+git -C 'F:/mptech' remote set-url origin https://github.com/vibedong/mptech.git
+git -C 'F:/mptech' push -u origin main
+```
+
+그 뒤 `git -C 'F:/mptech' remote -v`가 `vibedong/mptech.git`를 보여야 합니다.
 
 ### modules에 바로 코드를 만들어도 되나요?
 
