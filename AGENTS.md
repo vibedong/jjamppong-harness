@@ -4,18 +4,21 @@
 
 This repository uses OuroSuper Harness.
 
-## Repository Role
+## Harness Root Model
 
-- Source/template repository: `F:/Folder/ourosuper-harness`, published as the private GitHub template repository named `ourosuper-harness`. Do not create product or application code here.
-- Generated project repository: `F:/Folder/projects/<project-name>`, created from the private GitHub template. Product work lives under `modules/` only after the Full Workflow has approved the relevant module structure.
+- The directory containing this `AGENTS.md` is the harness root.
+- When installing the harness into a project folder such as `F:/mptech`, `AGENTS.md`, `harness/`, `modules/`, `docs/`, `module-template/`, and `proposals/` must live directly under `F:/mptech`.
+- Do not create a nested `F:/mptech/ourosuper-harness/` folder unless the user explicitly wants to maintain a separate copy of the template source.
+- Product or application work lives under `modules/` only after the Full Workflow has approved the relevant module structure.
+- The template-maintenance checkout at `F:/Folder/ourosuper-harness` is for updating the reusable harness template. Do not create product or application code there.
 - If the repository role is unclear, stop and ask the user before writing product code, changing `modules/`, or starting request intake.
 
 ## New Project Request Trigger
 
-If the user says they want to make, start, or build a project, for example "ERP 프로젝트 만들고 싶어", first decide whether this repository is the harness source or a generated project.
+If the user says they want to make, start, or build a project, for example "ERP 프로젝트 만들고 싶어", first decide whether the current directory is the intended harness root or the template-maintenance checkout.
 
-- In the source/template repository: do not create product code. Confirm the project slug, create a private generated project repository from the GitHub template, verify the clone path under `F:/Folder/projects/<project-name>` is unused, clone it, switch the working directory to that generated repository, then continue there.
-- In a generated project: record request intake in `harness/state/intake.md`, run OuroSuper Planning, then continue through the Full Workflow.
+- For a new project folder: create or clone the private project repository so the harness files land directly under the target folder, for example `F:/mptech/AGENTS.md`, not `F:/mptech/ourosuper-harness/AGENTS.md`.
+- In the project harness root: record request intake in `harness/state/intake.md`, run OuroSuper Planning, then continue through the Full Workflow.
 - Do not create folders under `modules/` until `harness/state/module-structure.md` approves the module structure.
 
 ## Always Use

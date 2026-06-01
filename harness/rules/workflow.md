@@ -70,7 +70,7 @@ harness/state/superpowers/reviews.md
 
 Use the Superpowers implementation flow defined in `harness/rules/rules.md`.
 
-In a generated project repository, product or project code belongs under `modules/` only after the approved module structure allows it.
+In a project harness root, product or project code belongs under `modules/` only after the approved module structure allows it.
 
 ## Verification
 
