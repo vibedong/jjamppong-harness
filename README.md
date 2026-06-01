@@ -4,7 +4,7 @@
 
 이 저장소는 npm package가 아닙니다. 설치란 template 내용을 대상 프로젝트 root에 직접 놓는 것입니다.
 
-이 template repository의 GitHub 이름은 기존 호환성 때문에 `ourosuper-harness`로 남아 있을 수 있습니다. 문서와 workflow의 현재 이름은 `짬뽕하네스`입니다.
+GitHub template source는 `vibedong/jjamppong-harness`입니다. 문서와 workflow의 현재 이름은 `짬뽕하네스`입니다.
 
 ## Table Of Contents
 
@@ -77,7 +77,7 @@ Install them first, then rerun this task.
 
 ```powershell
 Push-Location 'F:/'
-gh repo create <project-name> --private --template vibedong/ourosuper-harness --clone
+gh repo create <project-name> --private --template vibedong/jjamppong-harness --clone
 Pop-Location
 ```
 
@@ -106,10 +106,10 @@ git -C 'F:/<project-name>' remote -v
 
 Rules:
 
-- Final files must be `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`, not `F:/mptech/ourosuper-harness/AGENTS.md`.
+- Final files must be `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`, not `F:/mptech/jjamppong-harness/AGENTS.md`.
 - Copy template contents into the project root excluding `.git/`.
 - Preserve the existing project repository `origin`.
-- After setup, `git remote -v` in the project root must point to the project repository, not `https://github.com/vibedong/ourosuper-harness.git`.
+- After setup, `git remote -v` in the project root must point to the project repository, not `https://github.com/vibedong/jjamppong-harness.git`.
 - The safe command below is for a project root that has no top-level collisions except `.git/`. If files such as `README.md`, `AGENTS.md`, `harness/`, or `modules/` already exist, list the collisions and stop so the user can choose merge, skip, or overwrite path by path.
 
 Safe PowerShell flow:
@@ -123,7 +123,7 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($beforeOrigin)) {
 $tempBase = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path
 $tempRoot = Join-Path $tempBase ('jjamppong-harness-' + [guid]::NewGuid().ToString('N'))
 try {
-  git clone https://github.com/vibedong/ourosuper-harness.git $tempRoot
+  git clone https://github.com/vibedong/jjamppong-harness.git $tempRoot
   if ($LASTEXITCODE -ne 0) { throw "Template clone failed" }
   $source = (Resolve-Path -LiteralPath $tempRoot).Path
   if (-not $source.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar) -or -not (Split-Path -Leaf $source).StartsWith('jjamppong-harness-')) {
@@ -154,8 +154,10 @@ try {
       throw "Missing required root item: $required"
     }
   }
-  if (Test-Path -LiteralPath (Join-Path $target 'ourosuper-harness')) {
-    throw "Nested ourosuper-harness folder was created"
+  foreach ($nestedName in @('jjamppong-harness', 'ourosuper-harness')) {
+    if (Test-Path -LiteralPath (Join-Path $target $nestedName)) {
+      throw "Nested $nestedName folder was created"
+    }
   }
   git -C $target remote -v
 }
@@ -251,7 +253,7 @@ intake.md
 ## Rules That Matter
 
 1. 설치 대상 폴더 자체가 하네스 루트입니다. 예: `F:/mptech`
-2. `F:/mptech/ourosuper-harness/`처럼 하네스를 중첩 설치하지 않습니다.
+2. `F:/mptech/jjamppong-harness/`처럼 하네스를 중첩 설치하지 않습니다.
 3. 실제 프로젝트 root의 `origin`은 project repository를 가리켜야 합니다. 예: `https://github.com/vibedong/mptech.git`
 4. 프로젝트 설정 이후의 실질 작업은 `main`이 아니라 `task/<task-slug>` 브랜치에서 시작합니다.
 5. `git commit`, `git push`, PR 생성, merge, release는 현재 채팅에서 사용자가 명시 승인해야만 실행합니다.
@@ -271,7 +273,7 @@ intake.md
 
 ### Template 자체를 같이 관리할 때
 
-`vibedong/ourosuper-harness`에 친구를 collaborator로 초대합니다.
+`vibedong/jjamppong-harness`에 친구를 collaborator로 초대합니다.
 
 추천 권한:
 
@@ -300,7 +302,7 @@ private 저장소라서 권한이 없으면 볼 수 없습니다. collaborator�
 Full Workflow대로 진행해줘.
 ```
 
-### F:/mptech/ourosuper-harness 아래에 생겼습니다
+### F:/mptech/jjamppong-harness 아래에 생겼습니다
 
 한 단계 깊게 들어간 상태입니다. 원하는 구조는 `F:/mptech/AGENTS.md`와 `F:/mptech/modules/`가 바로 보이는 형태입니다.
 
@@ -336,12 +338,12 @@ git -C 'F:/mptech' push -u origin main
 
 ## Maintaining The Template
 
-template 원본을 고칠 때는 `F:/Folder/ourosuper-harness`에서 작업합니다.
+template 원본을 고칠 때는 `vibedong/jjamppong-harness`를 clone한 template-maintenance checkout에서 작업합니다.
 
-실제 프로젝트를 만들 때는 이 template 원본을 `F:/mptech/ourosuper-harness`로 clone하지 않습니다. `F:/mptech` 자체가 project repository이자 harness root가 되게 만듭니다.
+실제 프로젝트를 만들 때는 이 template 원본을 `F:/mptech/jjamppong-harness`로 clone하지 않습니다. `F:/mptech` 자체가 project repository이자 harness root가 되게 만듭니다.
 
 ```powershell
-git -C 'F:/Folder/ourosuper-harness' status --short --branch
+git status --short --branch
 ```
 
 이미 template에서 만들어진 project root에는 변경사항이 자동으로 반영되지 않습니다. 필요한 변경은 각 project repository에서 따로 반영합니다.
