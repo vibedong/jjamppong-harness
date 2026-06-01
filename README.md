@@ -1,15 +1,14 @@
-# OuroSuper Harness
+# 짬뽕하네스
 
-Codex가 새 프로젝트를 시작할 때 바로 코딩부터 하지 않도록 잡아주는 private project harness template입니다.
+짬뽕하네스는 Matt Pocock skills, Superpowers, Compound Engineering, gstack review, vowline을 섞어서 모든 작업을 기획 -> PRD -> issue 분해 -> task brief -> writing-plans -> 실행 -> 검증 -> 학습 회수 순서로 강제하는 private agent workflow harness입니다.
 
-이 template은 `F:/mptech` 같은 프로젝트 폴더 자체를 하네스 루트로 만듭니다. 설치가 끝나면 `AGENTS.md`, `harness/`, `modules/`가 대상 폴더 바로 아래에 있어야 합니다.
+이 저장소는 npm package가 아닙니다. 설치란 template 내용을 대상 프로젝트 root에 직접 놓는 것입니다.
 
-실제 제품 코드는 하네스 루트의 `modules/` 아래에 들어갑니다. `harness/`는 규칙, 계획, 검증 상태를 담는 제어 영역입니다.
+이 template repository의 GitHub 이름은 기존 호환성 때문에 `ourosuper-harness`로 남아 있을 수 있습니다. 문서와 workflow의 현재 이름은 `짬뽕하네스`입니다.
 
 ## Table Of Contents
 
 - [Why](#why)
-- [What This Gives You](#what-this-gives-you)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -30,16 +29,7 @@ Codex가 새 프로젝트를 시작할 때 바로 코딩부터 하지 않도록 
 - 다음 채팅에서 맥락이 끊김
 - 배운 내용을 다음 프로젝트에 재사용하지 못함
 
-OuroSuper Harness는 이 문제를 줄이기 위해 Codex가 항상 같은 순서로 움직이게 합니다.
-
-## What This Gives You
-
-- 새 프로젝트 폴더에 바로 깔리는 private harness template
-- Codex가 따라야 할 workflow 규칙
-- 요청 정리, 기획, 계획, 검증 상태를 저장할 위치
-- module 구조를 승인 전까지 막는 안전장치
-- 다음 채팅용 handoff 파일
-- 반복해서 쓸 수 있는 학습 문서 위치
+짬뽕하네스는 Codex가 항상 같은 순서로 움직이게 해서 이 문제를 줄입니다.
 
 ## Requirements
 
@@ -50,56 +40,40 @@ OuroSuper Harness는 이 문제를 줄이기 위해 Codex가 항상 같은 순�
 - Git
 - GitHub CLI, 선택 사항이지만 추천
 - Codex 앱
-- Codex에서 사용할 workflow 도구
-  - OuroSuper
-  - Superpowers
-  - Compound Engineering `ce-compound`
+- Matt Pocock skills
+  - `setup-matt-pocock-skills`
+  - `grill-with-docs`
+  - `to-prd`
+  - `to-issues`
+- Superpowers
+- gstack review skills
+  - `plan-ceo-review`
+  - `plan-eng-review`
+- Compound Engineering `ce-compound`
+- vowline
 
-GitHub CLI 없이도 GitHub 웹사이트의 **Use this template** 버튼으로 사용할 수 있습니다.
+Matt Pocock skills are external requirements. Install them before using the planning gate:
+
+```bash
+npx skills@latest add mattpocock/skills
+```
+
+Readiness details live at `harness/docs/agents/matt-pocock-skills.md`.
+
+If readiness fails, stop with this message:
+
+```text
+Matt Pocock planning skills are required before this harness can continue.
+Install them first, then rerun this task.
+```
 
 ## Installation
 
-이 프로젝트의 "설치"는 npm package처럼 루트에서 `npm install` 하는 것이 아닙니다.
+이 저장소는 npm package가 아닙니다. 설치란 template 내용을 대상 프로젝트 root에 직접 놓는 것입니다.
 
-이 template을 사용해서 대상 프로젝트 폴더 자체를 하네스 루트로 만드는 것이 설치입니다.
+### New Project From Template
 
-예를 들어 `F:/mptech`에 설치한다면 최종 형태는 반드시 이렇게 되어야 합니다.
-
-```text
-F:/mptech/
-  AGENTS.md
-  README.md
-  handoff.md
-  harness/
-  modules/
-  module-template/
-  proposals/
-  docs/
-```
-
-아래처럼 한 단계 더 들어가면 잘못된 설치입니다.
-
-```text
-F:/mptech/ourosuper-harness/
-```
-
-### Option A: GitHub Website
-
-1. `vibedong/ourosuper-harness` 저장소를 엽니다.
-2. **Use this template**을 누릅니다.
-3. 새 repository name을 프로젝트 이름으로 정합니다. 예: `mptech`
-4. visibility는 **Private**로 둡니다.
-5. 생성된 저장소를 대상 폴더로 clone합니다.
-
-예상 로컬 위치:
-
-```text
-F:/mptech
-```
-
-### Option B: GitHub CLI
-
-이 방식은 처음부터 프로젝트 전용 GitHub repository를 만들기 때문에 가장 안전합니다. 완료 후 `origin`은 `ourosuper-harness`가 아니라 새 project repository를 가리켜야 합니다.
+새 프로젝트를 만들 때는 GitHub template 기능으로 프로젝트 전용 private repository를 만듭니다.
 
 ```powershell
 Push-Location 'F:/'
@@ -107,34 +81,93 @@ gh repo create <project-name> --private --template vibedong/ourosuper-harness --
 Pop-Location
 ```
 
-예:
-
-```powershell
-Push-Location 'F:/'
-gh repo create mptech --private --template vibedong/ourosuper-harness --clone
-Pop-Location
-```
-
-이 예시는 `F:/mptech/AGENTS.md`가 생기는 구조를 만듭니다.
-
-완료 후 확인:
-
-```powershell
-git -C 'F:/mptech' remote -v
-```
-
-정상 결과는 아래처럼 project repository를 가리켜야 합니다.
+예상 결과:
 
 ```text
-origin  https://github.com/vibedong/mptech.git (fetch)
-origin  https://github.com/vibedong/mptech.git (push)
+F:/<project-name>/
+  AGENTS.md
+  README.md
+  handoff.md
+  harness/
+  modules/
+  module-template/
+  proposals/
 ```
 
-아래처럼 template repository를 가리키면 아직 완료된 설치가 아닙니다.
+완료 후 `origin`은 template source가 아니라 새 project repository를 가리켜야 합니다.
 
-```text
-origin  https://github.com/vibedong/ourosuper-harness.git (fetch)
-origin  https://github.com/vibedong/ourosuper-harness.git (push)
+```powershell
+git -C 'F:/<project-name>' remote -v
+```
+
+### Apply Harness Into Existing Repo Root
+
+이미 `F:/mptech` 같은 프로젝트 repository가 있으면 template source를 중첩 clone하지 않습니다.
+
+Rules:
+
+- Final files must be `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`, not `F:/mptech/ourosuper-harness/AGENTS.md`.
+- Copy template contents into the project root excluding `.git/`.
+- Preserve the existing project repository `origin`.
+- After setup, `git remote -v` in the project root must point to the project repository, not `https://github.com/vibedong/ourosuper-harness.git`.
+- The safe command below is for a project root that has no top-level collisions except `.git/`. If files such as `README.md`, `AGENTS.md`, `harness/`, or `modules/` already exist, list the collisions and stop so the user can choose merge, skip, or overwrite path by path.
+
+Safe PowerShell flow:
+
+```powershell
+$target = (Resolve-Path -LiteralPath 'F:/mptech').Path
+$beforeOrigin = git -C $target remote get-url origin
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($beforeOrigin)) {
+  throw "Target must be an existing git repository with an origin remote"
+}
+$tempBase = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path
+$tempRoot = Join-Path $tempBase ('jjamppong-harness-' + [guid]::NewGuid().ToString('N'))
+try {
+  git clone https://github.com/vibedong/ourosuper-harness.git $tempRoot
+  if ($LASTEXITCODE -ne 0) { throw "Template clone failed" }
+  $source = (Resolve-Path -LiteralPath $tempRoot).Path
+  if (-not $source.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar) -or -not (Split-Path -Leaf $source).StartsWith('jjamppong-harness-')) {
+    throw "Unexpected temp clone path: $source"
+  }
+  $collisions = @()
+  foreach ($item in Get-ChildItem -LiteralPath $source -Force) {
+    if ($item.Name -eq '.git') { continue }
+    $destination = Join-Path $target $item.Name
+    if (Test-Path -LiteralPath $destination) {
+      $collisions += $destination
+    }
+  }
+  if ($collisions) {
+    $collisions
+    throw "Destination collisions found; choose merge, skip, or overwrite per path before continuing"
+  }
+  foreach ($item in Get-ChildItem -LiteralPath $source -Force) {
+    if ($item.Name -eq '.git') { continue }
+    Copy-Item -LiteralPath $item.FullName -Destination $target -Recurse -Force
+  }
+  $afterOrigin = git -C $target remote get-url origin
+  if ($LASTEXITCODE -ne 0 -or $afterOrigin -ne $beforeOrigin) {
+    throw "origin changed from $beforeOrigin to $afterOrigin"
+  }
+  foreach ($required in @('AGENTS.md', 'harness', 'modules')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $target $required))) {
+      throw "Missing required root item: $required"
+    }
+  }
+  if (Test-Path -LiteralPath (Join-Path $target 'ourosuper-harness')) {
+    throw "Nested ourosuper-harness folder was created"
+  }
+  git -C $target remote -v
+}
+finally {
+  if (Test-Path -LiteralPath $tempRoot) {
+    $resolvedTemp = (Resolve-Path -LiteralPath $tempRoot).Path
+    if (-not $resolvedTemp.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar) -or -not (Split-Path -Leaf $resolvedTemp).StartsWith('jjamppong-harness-')) {
+      throw "Refusing to remove unexpected temp path: $resolvedTemp"
+    }
+    Remove-Item -LiteralPath $resolvedTemp -Recurse -Force
+  }
+}
 ```
 
 ## Quick Start
@@ -150,96 +183,85 @@ F:/mptech
 그 다음 Codex에게 이렇게 말합니다.
 
 ```text
-ERP 프로젝트 만들고 싶어.
-먼저 harness/state/intake.md에 요청을 정리하고,
-OuroSuper 기획부터 시작해줘.
+이 프로젝트를 짬뽕하네스 방식으로 제대로 기획하고 실행 준비해줘.
+내 요청을 먼저 정리하고, 모호한 부분을 질문하고, PRD와 실행 이슈로 쪼갠 다음,
+PRD 초안 후 내 승인을 받고, issue 분해 후 다시 내 승인을 받은 다음,
+task brief와 writing plan까지 만든 뒤 구현 전에 리뷰 여부를 물어봐.
+작은 작업이어도 같은 흐름으로 처리해.
 ```
 
-또는 template에서 프로젝트 생성까지 Codex에게 맡길 때는 이렇게 말합니다.
+내부 흐름은 이렇게 기록됩니다.
 
 ```text
-private 프로젝트로 mptech 만들어줘.
-템플릿은 vibedong/ourosuper-harness를 쓰고,
-F:/mptech 바로 아래에 AGENTS.md, harness/, modules/가 생기게 해줘.
-F:/mptech/ourosuper-harness처럼 중첩하지 마.
-GitHub 원격은 vibedong/mptech로 만들고 origin도 그쪽으로 설정해줘.
-origin이 vibedong/ourosuper-harness.git이면 완료가 아니야.
+intake.md
+-> setup-matt-pocock-skills readiness check
+-> grill-with-docs
+-> to-prd
+-> user PRD approval
+-> to-issues
+-> user issue approval
+-> brief.md
+-> superpowers:writing-plans
+-> Mandatory Plan Review Question
 ```
 
 ## How It Works
 
-Codex는 실제 구현 전에 아래 흐름을 따릅니다.
-
-```text
-Request Intake
--> OuroSuper Planning
--> Superpowers Writing Plans
--> Mandatory Plan Review Question
--> Implementation / Apply
--> Verification
--> ce-compound
--> Learning Update Question
--> Optional Handoff Update
-```
-
-한국어로 보면 이렇게 생각하면 됩니다.
-
-```text
-요청 정리
--> 기획
--> 구현 계획 작성
--> 구현 전 리뷰 질문
--> 구현
--> 검증
--> 배운 점 정리
--> 다음 프로젝트에 반영할지 질문
--> 필요할 때만 handoff 갱신
-```
+1. Request Intake
+2. setup-matt-pocock-skills Readiness Check
+3. grill-with-docs
+4. to-prd
+5. User PRD Approval
+6. to-issues
+7. User Issue Approval
+8. Task Brief
+9. Superpowers Writing Plans
+10. Mandatory Plan Review Question
+11. Implementation / Apply
+12. Verification
+13. ce-compound
+14. Archive Task Artifacts
+15. Learning Update Question
 
 ## Directory Layout
 
 ```text
 <project-root>/
-  AGENTS.md                Codex가 먼저 읽는 작업 규칙
+  AGENTS.md
   README.md
-  handoff.md               새 채팅용 인수인계 파일
-
-  harness/
-    rules/
-      workflow.md          Codex가 따르는 전체 workflow
-      rules.md             필수 스킬, 검증, proposal 규칙
-      module-types.md      module 구조를 정하는 방법
-
-    state/
-      intake.md            현재 요청 정리
-      module-structure.md  승인된 module 구조
-      compound.md          ce-compound 결과 링크와 상태
-      ourosuper/           OuroSuper 산출물
-      superpowers/         Superpowers 계획/리뷰 산출물
-      verification/        검증 결과
-
-  docs/
-    solutions/             재사용 가능한 학습 문서
-
-  module-template/         새 module을 만들 때 복사하는 기본 템플릿
-  proposals/               승인 전 harness/workflow 변경 제안
-  modules/                 실제 프로젝트에서 제품 코드가 들어가는 곳
+  CONTEXT.md
+  handoff.md
+  harness/docs/agents/
+  harness/docs/adr/
+  harness/docs/solutions/
+  harness/docs/tasks/active/<slug>/
+  harness/docs/tasks/archive/<slug>/
+  harness/rules/workflow.md
+  harness/rules/rules.md
+  harness/rules/module-types.md
+  harness/state/intake.md
+  harness/state/planning.md
+  harness/state/module-structure.md
+  harness/state/compound.md
+  module-template/
+  proposals/
+  modules/
 ```
 
 ## Rules That Matter
 
-가장 중요한 규칙은 이렇습니다.
-
 1. 설치 대상 폴더 자체가 하네스 루트입니다. 예: `F:/mptech`
 2. `F:/mptech/ourosuper-harness/`처럼 하네스를 중첩 설치하지 않습니다.
 3. 실제 프로젝트 root의 `origin`은 project repository를 가리켜야 합니다. 예: `https://github.com/vibedong/mptech.git`
-4. 실제 프로젝트 root의 `origin`이 `https://github.com/vibedong/ourosuper-harness.git`이면 설치가 끝난 것이 아닙니다.
-5. 실제 제품 코드는 하네스 루트의 `modules/` 아래에만 작성합니다.
-6. `modules/` 아래에는 `harness/state/module-structure.md`가 승인된 뒤에만 코드를 만듭니다.
-7. 구현 전에는 계획 리뷰 질문을 거칩니다.
-8. 검증 전에는 완료라고 말하지 않습니다.
-9. `handoff.md`는 사용자가 요청할 때만 갱신합니다.
-10. 새 규칙 아이디어는 바로 live rule을 바꾸지 않고 `proposals/`에서 검토합니다.
+4. 프로젝트 설정 이후의 실질 작업은 `main`이 아니라 `task/<task-slug>` 브랜치에서 시작합니다.
+5. `git commit`, `git push`, PR 생성, merge, release는 현재 채팅에서 사용자가 명시 승인해야만 실행합니다.
+6. 실제 제품 코드는 하네스 루트의 `modules/` 아래에만 작성합니다.
+7. `modules/` 아래에는 `harness/state/module-structure.md`가 승인된 뒤에만 코드를 만듭니다.
+8. PRD 초안과 issue 분해는 각각 사용자 승인을 받은 뒤 다음 단계로 넘어갑니다.
+9. 구현 전에는 Mandatory Plan Review Question을 거칩니다.
+10. 검증 전에는 완료라고 말하지 않습니다.
+11. `handoff.md`는 사용자가 요청할 때만 next-chat context로 갱신합니다.
+12. 새 규칙 아이디어는 바로 live rule을 바꾸지 않고 `proposals/`에서 검토합니다.
 
 ## Sharing With A Friend
 
@@ -284,7 +306,7 @@ Full Workflow대로 진행해줘.
 
 새로 만들 때는 project repository 이름을 `mptech`로 만들고 `F:/`에서 clone하거나, Codex에게 중첩하지 말고 `F:/mptech` 바로 아래에 하네스 파일을 두라고 말하세요.
 
-### origin이 ourosuper-harness를 가리킵니다
+### origin이 template source를 가리킵니다
 
 프로젝트 root로 쓰려면 아직 완료된 상태가 아닙니다. `mptech` 같은 프로젝트 전용 private repository를 만들고 origin을 그쪽으로 바꿔야 합니다.
 
@@ -320,13 +342,10 @@ template 원본을 고칠 때는 `F:/Folder/ourosuper-harness`에서 작업합�
 
 ```powershell
 git -C 'F:/Folder/ourosuper-harness' status --short --branch
-git -C 'F:/Folder/ourosuper-harness' add README.md
-git -C 'F:/Folder/ourosuper-harness' commit -m 'docs: update README'
-git -C 'F:/Folder/ourosuper-harness' push origin main
 ```
 
 이미 template에서 만들어진 project root에는 변경사항이 자동으로 반영되지 않습니다. 필요한 변경은 각 project repository에서 따로 반영합니다.
 
 ## One-Line Summary
 
-OuroSuper Harness는 대상 프로젝트 폴더 자체에 설치되는 private harness template이며, 실제 제품 코드는 그 폴더의 `modules/` 아래에서 시작합니다.
+짬뽕하네스는 대상 프로젝트 폴더 자체에 설치되는 private harness template이며, 실제 제품 코드는 그 폴더의 `modules/` 아래에서 시작합니다.

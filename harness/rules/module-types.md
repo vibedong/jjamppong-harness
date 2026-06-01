@@ -26,14 +26,20 @@ They must follow:
 
 ```text
 Request Intake
--> OuroSuper Planning
+-> setup-matt-pocock-skills Readiness Check
+-> grill-with-docs
+-> to-prd
+-> User PRD Approval
+-> to-issues
+-> User Issue Approval
+-> Task Brief
 -> Superpowers Writing Plans
 -> Mandatory Plan Review Question
 -> Implementation / Apply
 -> Verification
 -> ce-compound
+-> Archive Task Artifacts
 -> Learning Update Question
--> Optional Handoff Update
 ```
 
 ## Output Location
