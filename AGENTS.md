@@ -18,6 +18,13 @@ This repository uses 짬뽕하네스 (`jjamppong-harness`), a private agent work
 
 If the user says they want to make, start, or build a project, for example "ERP 프로젝트 만들고 싶어", first decide whether the current directory is the intended harness root or the template-maintenance checkout.
 
+- Treat shorthand install requests in the form `<template-repo-or-url> <target-path>에 설치해줘` as a request to install this template into the target project root. The repo/url token is the template source; the path-like token is the target harness root.
+- Normalize Windows drive shorthand before writing. A token shaped like `<drive>:<folder>` means `<drive>:/<folder>` for this harness install flow. Say the normalized target path before making changes.
+- Never satisfy shorthand install by leaving files under a nested folder named after the template repository, such as `<target-root>/jjamppong-harness/` or `<target-root>/ourosuper-harness/`.
+- If the target path is missing, ambiguous, or not a Windows/local path, ask one concise clarification before writing.
+- If the target path exists and is non-empty, inspect top-level collisions first. Do not overwrite `README.md`, `AGENTS.md`, `harness/`, `modules/`, `module-template/`, or `proposals/` without explicit user approval.
+- If the target path is already a git repository, preserve its `origin`; copy template contents excluding `.git/`.
+- If the target path is empty or not a git repository, create or use a project repository named from the target folder, for example `<target-root>` -> `<owner>/<target-folder-name>`, and make the target path the project repository root. Do not leave `origin` pointing at the template source.
 - For a new project folder: create or clone the private project repository so the harness files land directly under the target folder, for example `F:/mptech/AGENTS.md`, not `F:/mptech/jjamppong-harness/AGENTS.md`.
 - If the user names `vibedong/jjamppong-harness.git` as the install source, treat it as a template source, not as the final project remote.
 - Unless the user gives a different project slug, derive the project slug from the target folder name. Example: `F:/mptech` uses `mptech`.
