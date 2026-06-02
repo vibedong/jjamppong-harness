@@ -1,12 +1,12 @@
 # 짬뽕하네스
 
-짬뽕하네스는 Codex가 새 프로젝트를 시작할 때 바로 코드를 만들지 않고, 요구사항 정리부터 PRD, issue 분해, writing plan, 리뷰, 구현, 검증, 학습 회수까지 같은 순서로 진행하게 만드는 private workflow harness입니다.
+짬뽕하네스는 Codex가 새 프로젝트를 시작할 때 바로 코드를 만들지 않고, 요구사항 정리부터 PRD, 이슈 분해, writing plan, 리뷰, 구현, 검증, 학습 회수까지 같은 순서로 진행하게 만드는 개인용 작업 흐름 하네스입니다.
 
-이 저장소는 npm package가 아닙니다. 설치란 template 내용을 대상 프로젝트 root에 직접 놓는 것입니다.
+이 저장소는 npm 패키지가 아닙니다. 여기서 “설치”란 템플릿 내용을 대상 프로젝트 루트에 직접 펼치는 것을 뜻합니다.
 
-GitHub template source는 `vibedong/jjamppong-harness`입니다.
+GitHub 템플릿 원본은 `vibedong/jjamppong-harness`입니다.
 
-## Why
+## 왜 필요한가
 
 새 프로젝트가 흔들리는 지점은 보통 비슷합니다.
 
@@ -19,78 +19,78 @@ GitHub template source는 `vibedong/jjamppong-harness`입니다.
 
 짬뽕하네스는 이 흐름을 파일과 규칙으로 고정합니다. Codex가 매번 같은 입구로 들어오고, 같은 산출물을 만들고, 같은 검증 기준으로 끝내게 하는 것이 목적입니다.
 
-## What You Get
+## 무엇이 들어있나
 
-| Surface | Purpose |
+| 위치 | 역할 |
 | --- | --- |
 | `AGENTS.md` | Codex가 반드시 따라야 할 최상위 작업 규칙 |
-| `harness/rules/` | workflow, hard rules, module type 기준 |
+| `harness/rules/` | 작업 흐름, 필수 규칙, 모듈 유형 기준 |
 | `harness/state/` | 현재 프로젝트의 결정 상태와 승인된 구조 |
-| `harness/docs/tasks/` | PRD, issue, brief, writing plan, review, verification 산출물 |
+| `harness/docs/tasks/` | PRD, 이슈, brief, writing plan, 리뷰, 검증 산출물 |
 | `harness/docs/solutions/` | 다음 프로젝트에도 재사용할 수 있는 학습 |
 | `modules/` | 승인된 뒤 실제 제품 코드가 들어가는 공간 |
-| `module-template/` | 새 module을 만들 때 쓰는 기본 틀 |
-| `proposals/` | live rule을 바꾸기 전 검토하는 제안 공간 |
+| `module-template/` | 새 모듈을 만들 때 쓰는 기본 틀 |
+| `proposals/` | 실제 규칙을 바꾸기 전 검토하는 제안 공간 |
 | `handoff.md` | 사용자가 요청했을 때만 갱신하는 새 채팅 인계 문서 |
 
-새 프로젝트에 설치할 때 `harness/docs/tasks/active/`와 `harness/docs/tasks/archive/`는 빈 폴더로 시작합니다. Template maintenance 과정에서 생긴 task artifact는 새 프로젝트로 복사하지 않습니다. 기존 프로젝트에 `-AllowOverwrite`로 다시 적용할 때는 그 프로젝트의 기존 task 기록을 지우지 않습니다.
+새 프로젝트에 설치할 때 `harness/docs/tasks/active/`와 `harness/docs/tasks/archive/`는 빈 폴더로 시작합니다. 템플릿 유지보수 과정에서 생긴 task artifact는 새 프로젝트로 복사하지 않습니다. 기존 프로젝트에 `-AllowOverwrite`로 다시 적용할 때는 그 프로젝트의 기존 task 기록을 지우지 않습니다.
 
-## How It Works
+## 작동 방식
 
 ```mermaid
 flowchart LR
-  A["Request intake"] --> B["Planning gate"]
-  B --> C["PRD approval"]
-  C --> D["Issue breakdown"]
-  D --> E["Issue approval"]
-  E --> F["Task brief"]
-  F --> G["Writing plan"]
-  G --> H["Plan review"]
-  H --> I["Implementation"]
-  I --> J["Verification"]
-  J --> K["Learning capture"]
+  A["요청 정리"] --> B["계획 게이트"]
+  B --> C["PRD 승인"]
+  C --> D["issue 분해"]
+  D --> E["issue 승인"]
+  E --> F["task brief"]
+  F --> G["writing plan"]
+  G --> H["계획 리뷰"]
+  H --> I["구현"]
+  I --> J["검증"]
+  J --> K["학습 기록"]
 ```
 
-The default full workflow is:
+기본 전체 작업 흐름은 다음 순서입니다.
 
-1. Request Intake
-2. setup-matt-pocock-skills Readiness Check
-3. Grill Routing And Completion Gate
-4. Grill Result Record
-5. Module Structure Gate
-6. to-prd
-7. User PRD Approval
-8. to-issues
-9. User Issue Approval
-10. Task Brief
-11. Superpowers Writing Plans
-12. Mandatory Plan Review Question
-13. Implementation / Apply
-14. Verification
-15. ce-compound
-16. Archive Task Artifacts
-17. Learning Update Question
+1. 요청 인테이크 (`Request Intake`)
+2. `setup-matt-pocock-skills` 준비 확인
+3. 질문 방식 선택 및 완료 게이트 (`Grill Routing And Completion Gate`)
+4. 질문 결과 기록 (`Grill Result Record`)
+5. 모듈 구조 게이트 (`Module Structure Gate`)
+6. `to-prd`
+7. 사용자 PRD 승인
+8. `to-issues`
+9. 사용자 이슈 승인
+10. task brief
+11. `superpowers:writing-plans`
+12. 필수 계획 리뷰 질문
+13. 구현 또는 적용
+14. 검증
+15. `ce-compound`
+16. task artifact 보관
+17. 학습 업데이트 질문
 
-작은 작업도 기본적으로 같은 흐름을 탑니다. 예외를 만들고 싶으면 live rule을 바로 바꾸지 말고 `proposals/`에서 먼저 검토합니다.
+작은 작업도 기본적으로 같은 흐름을 탑니다. 예외를 만들고 싶으면 실제 규칙을 바로 바꾸지 말고 `proposals/`에서 먼저 검토합니다.
 
-## Planning Behavior
+## 계획 단계 동작
 
-짬뽕하네스는 바로 PRD나 module 구조로 가지 않습니다.
+짬뽕하네스는 바로 PRD나 모듈 구조로 가지 않습니다.
 
-Planning starts by choosing the right grilling flow:
+계획 단계는 요청 모양에 맞는 질문 흐름을 고르는 것부터 시작합니다.
 
-- `grill-with-docs`: use when existing code, docs, candidate lists, domain glossary, ADRs, or prior implementations can answer or sharpen the request.
-- `grill-me`: use when the request is greenfield, product-intent driven, or lacks enough existing project evidence.
+- `grill-with-docs`: 기존 코드, 문서, 후보 리스트, 도메인 용어, ADR, 과거 구현이 요청을 더 명확하게 만들 수 있을 때 사용합니다.
+- `grill-me`: 새로 시작하는 작업이거나 제품 의도 중심이고, 기존 자료만으로는 판단하기 어려울 때 사용합니다.
 
-In plain language: Codex should first check what already exists, then ask only the questions that still need your decision.
+쉽게 말하면 Codex는 먼저 이미 있는 자료를 확인하고, 그래도 사용자의 결정이 필요한 질문만 해야 합니다.
 
-For example, if a user asks for a 나라장터 crawler and mentions an existing `dailynara` folder, Codex should inspect `dailynara` first with `grill-with-docs`. It should ask the user only for decisions that the code cannot answer.
+예를 들어 사용자가 나라장터 crawler를 만들고 싶다고 하면서 기존 `dailynara` 폴더를 말하면, Codex는 먼저 `grill-with-docs`로 `dailynara`를 확인해야 합니다. 코드로 알 수 있는 것을 사용자에게 다시 묻지 않아야 합니다.
 
-The grill phase asks one question at a time and records the route, inspected evidence, answered questions, deferred unknowns, and remaining decisions in `harness/docs/tasks/active/<slug>/grill.md`. PRD, issue breakdown, module structure, writing plan, and implementation wait until core uncertainties are resolved or explicitly deferred.
+질문 단계는 한 번에 하나씩 묻고, 선택한 route, 확인한 근거, 근거로 답한 질문, 사용자에게 물은 질문, 보류한 미정사항, 남은 결정을 `harness/docs/tasks/active/<slug>/grill.md`에 기록합니다. PRD, 이슈 분해, 모듈 구조, writing plan, 구현은 핵심 불확실성이 해결되거나 사용자가 명시적으로 보류를 승인한 뒤에 진행합니다.
 
-If `modules/` is empty or `harness/state/module-structure.md` says no module structure is approved, Codex must decide module structure with the user before creating product module folders. If the request cannot create or change product module folders or product code, Codex records the Module Structure Gate as not applicable and does not ask module-structure questions.
+`modules/`가 비어 있거나 `harness/state/module-structure.md`에 승인된 모듈 구조가 없다고 되어 있으면, Codex는 제품 모듈 폴더를 만들기 전에 사용자와 모듈 구조를 먼저 정해야 합니다. 요청이 제품 모듈 폴더나 제품 코드를 만들거나 바꾸는 일이 아니라면, Codex는 Module Structure Gate를 해당 없음으로 기록하고 모듈 구조 질문을 하지 않습니다.
 
-## Expected Harness Scenario
+## 하네스 적용 예상 시나리오
 
 하네스가 적용된 프로젝트에서 사용자가 이렇게 말한다고 가정합니다.
 
@@ -101,37 +101,37 @@ If `modules/` is empty or `harness/state/module-structure.md` says no module str
 사용자가 제외한 데이터는 다음부터 실수하지 않게 반영하고싶어.
 ```
 
-Expected agent behavior:
+이때 기대하는 Codex 동작은 다음과 같습니다.
 
-1. Read `AGENTS.md` and `harness/rules/` first.
-2. Do not start coding.
-3. Choose `grill-with-docs` because the request names existing code or prior work.
-4. Inspect `dailynara/`, candidate lists, existing crawler flow, saved outputs, and relevant docs before asking the user.
-5. Answer from evidence when code or docs already answer the question.
-6. Ask only the remaining decision questions, one at a time.
-7. Record the route, inspected evidence, answered questions, user answers, deferred unknowns, and blockers in `harness/docs/tasks/active/<slug>/grill.md`.
-8. If product code or module folders may be created and no module structure is approved, propose two or three module structure options in plain language.
-9. Record the approved module structure in `harness/state/module-structure.md`.
-10. Only then move to PRD, issue breakdown, task brief, writing plan, plan review, implementation, and verification.
+1. 먼저 `AGENTS.md`와 `harness/rules/`를 읽습니다.
+2. 바로 코딩을 시작하지 않습니다.
+3. 요청에 기존 코드나 과거 작업이 나오므로 `grill-with-docs`를 선택합니다.
+4. 사용자에게 묻기 전에 `dailynara/`, 후보 리스트, 기존 crawler 흐름, 저장된 출력, 관련 문서를 확인합니다.
+5. 코드나 문서가 이미 답하는 질문은 근거로 답합니다.
+6. 남은 결정 질문만 한 번에 하나씩 묻습니다.
+7. 선택한 route, 확인한 근거, 근거로 답한 질문, 사용자 답변, 보류한 미정사항, blocker를 `harness/docs/tasks/active/<slug>/grill.md`에 기록합니다.
+8. 제품 코드나 모듈 폴더가 생길 수 있고 승인된 모듈 구조가 없다면, 모듈 구조 옵션 2~3개를 쉬운 말로 제안합니다.
+9. 승인된 모듈 구조를 `harness/state/module-structure.md`에 기록합니다.
+10. 그 다음에만 PRD, 이슈 분해, task brief, writing plan, 계획 리뷰, 구현, 검증으로 넘어갑니다.
 
-If the existing code is spaghetti:
+기존 코드가 스파게티 구조라면 다음처럼 처리합니다.
 
-1. Do not rewrite everything immediately.
-2. Identify the risky coupling in plain language, with file evidence.
-3. Preserve the known behavior first, for example by capturing current outputs or fixtures.
-4. Separate cleanup issues from feature issues.
-5. Recommend the smallest structure that lets the next feature ship without making the mess worse.
-6. Ask for approval before changing module structure or product code.
+1. 바로 전체를 갈아엎지 않습니다.
+2. 어떤 결합이 위험한지 파일 근거와 함께 쉬운 말로 설명합니다.
+3. 현재 출력이나 fixture를 잡아서 기존 동작을 먼저 보존합니다.
+4. 정리 작업 이슈와 기능 작업 이슈를 분리합니다.
+5. 다음 기능을 망치지 않으면서 진행할 수 있는 가장 작은 구조를 추천합니다.
+6. 모듈 구조나 제품 코드를 바꾸기 전에 사용자 승인을 받습니다.
 
-Bad behavior this harness is meant to prevent:
+이 하네스가 막으려는 나쁜 흐름은 다음과 같습니다.
 
-- Starting implementation before reading existing code.
-- Asking the user questions that `dailynara/` already answers.
-- Creating ad hoc folders under `modules/`.
-- Jumping from a vague request straight to PRD or code.
-- Saying the work is complete without verification evidence.
+- 기존 코드를 읽기 전에 구현을 시작함
+- `dailynara/`가 이미 답하는 내용을 사용자에게 다시 물음
+- `modules/` 아래에 즉흥적인 폴더를 만듦
+- 모호한 요청에서 바로 PRD나 코드로 점프함
+- 검증 근거 없이 완료됐다고 말함
 
-## Requirements
+## 요구사항
 
 사용자는 아래 준비가 필요합니다.
 
@@ -142,7 +142,7 @@ Bad behavior this harness is meant to prevent:
 - Codex 앱
 - Matt Pocock skills
 - Superpowers
-- gstack review skills
+- gstack 리뷰 skill
 - Compound Engineering `ce-compound`
 - vowline
 
@@ -152,15 +152,15 @@ Matt Pocock skills가 없다면 먼저 설치합니다.
 npx skills@latest add mattpocock/skills
 ```
 
-Readiness 기준은 `harness/docs/agents/matt-pocock-skills.md`에 있습니다.
+준비 확인 기준은 `harness/docs/agents/matt-pocock-skills.md`에 있습니다.
 
-## Installation
+## 설치
 
 설치 대상 폴더 자체가 harness root입니다. `F:/mptech`에 설치한다면 최종 구조는 `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`가 바로 보여야 합니다.
 
-### Recommended Installer
+### 권장 설치 스크립트
 
-이 하네스는 npm package처럼 설치하는 라이브러리가 아닙니다. GitHub template source를 임시로 읽어서 대상 프로젝트 폴더에 펼치는 project bootstrap입니다.
+이 하네스는 npm 패키지처럼 설치하는 라이브러리가 아닙니다. GitHub 템플릿 원본을 임시로 읽어서 대상 프로젝트 폴더에 펼치는 프로젝트 bootstrap입니다.
 
 Codex가 짧은 설치 요청을 받으면 직접 `git clone <template> <target>` 하지 말고, 이 스크립트를 우선 사용해야 합니다.
 
@@ -178,9 +178,9 @@ F:/mptech/
   modules/
 ```
 
-설치 후 `origin`은 template source가 아니라 project repository여야 합니다. 예를 들어 `F:/mptech`면 기본 project origin은 `https://github.com/vibedong/mptech.git`입니다. commit과 push는 여전히 사용자의 명시 승인 전까지 하지 않습니다.
+설치 후 `origin`은 템플릿 원본이 아니라 프로젝트 저장소여야 합니다. 예를 들어 `F:/mptech`면 기본 project origin은 `https://github.com/vibedong/mptech.git`입니다. commit과 push는 여전히 사용자의 명시 승인 전까지 하지 않습니다.
 
-### Natural Language Install
+### 자연어 설치 요청
 
 Codex에게 짧게 말해도 됩니다.
 
@@ -202,9 +202,9 @@ target root: normalized <target-path>
 project slug: last folder name of target root
 ```
 
-Windows drive shorthand는 설치 전에 정규화합니다. 예를 들어 `<drive>:<folder>`는 `<drive>:/<folder>`로 해석합니다.
+Windows 드라이브 축약 표기는 설치 전에 정규화합니다. 예를 들어 `<drive>:<folder>`는 `<drive>:/<folder>`로 해석합니다.
 
-설치 결과는 반드시 target root 바로 아래에 생겨야 합니다.
+설치 결과는 반드시 대상 루트 바로 아래에 생겨야 합니다.
 
 ```text
 <target-root>/
@@ -228,17 +228,17 @@ Codex가 이 짧은 문장을 받으면 다음 순서로 처리해야 합니다.
 
 1. 가능하면 `scripts/install-jjamppong-harness.ps1`를 사용합니다.
 2. `<target-path>`를 정규화했다고 먼저 말합니다.
-3. `<template-repo-or-url>`는 template source로만 사용합니다.
-4. 최종 project root는 정규화된 `<target-root>`입니다.
-5. `<target-root>`가 기존 git repo면 `origin`을 보존합니다. 단, `origin`이 template source라면 잘못된 설치 상태이므로 project repo origin으로 바꿉니다.
-6. `<target-root>`가 비어 있거나 repo가 아니면 target folder name으로 project repository를 만들거나 확인하고, `origin`이 project repo를 가리키게 합니다.
+3. `<template-repo-or-url>`는 템플릿 원본으로만 사용합니다.
+4. 최종 프로젝트 루트는 정규화된 `<target-root>`입니다.
+5. `<target-root>`가 기존 git repo면 `origin`을 보존합니다. 단, `origin`이 템플릿 원본이라면 잘못된 설치 상태이므로 프로젝트 저장소 `origin`으로 바꿉니다.
+6. `<target-root>`가 비어 있거나 repo가 아니면 대상 폴더 이름으로 project repository를 만들거나 확인하고, `origin`이 프로젝트 저장소를 가리키게 합니다.
 7. `README.md`, `AGENTS.md`, `harness/`, `modules/`, `module-template/`, `proposals/` 충돌이 있으면 덮어쓰기 전에 멈추고 물어봅니다.
 8. 완료 전 `AGENTS.md`, `harness/`, `modules/`가 `<target-root>` 바로 아래 있는지 확인합니다.
-9. 완료 전 `origin`이 template source가 아닌지 확인합니다.
+9. 완료 전 `origin`이 템플릿 원본이 아닌지 확인합니다.
 
-### Project Bootstrap With Installer
+### 설치 스크립트로 프로젝트 bootstrap
 
-새 프로젝트와 기존 프로젝트 모두 같은 installer를 사용합니다. 일반 설치 경로에서 GitHub template clone flow를 직접 쓰지 마세요. 그 방식은 root 배치, project `origin` 검증, template-maintenance task artifact 제거를 우회합니다.
+새 프로젝트와 기존 프로젝트 모두 같은 installer를 사용합니다. 일반 설치 경로에서 GitHub 템플릿 clone 흐름을 직접 쓰지 마세요. 그 방식은 루트 배치, project `origin` 검증, 템플릿 유지보수 task artifact 제거를 우회합니다.
 
 Codex가 이미 이 저장소를 열고 있다면:
 
@@ -246,7 +246,7 @@ Codex가 이미 이 저장소를 열고 있다면:
 .\scripts\install-jjamppong-harness.ps1 vibedong/jjamppong-harness.git F:mptech
 ```
 
-Codex가 installer 파일을 아직 갖고 있지 않다면 template source를 임시 폴더에만 clone한 뒤 installer만 실행합니다:
+Codex가 installer 파일을 아직 갖고 있지 않다면 템플릿 원본을 임시 폴더에만 clone한 뒤 installer만 실행합니다.
 
 ```powershell
 $tempBase = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
@@ -271,11 +271,11 @@ finally {
 Installer가 처리하는 일:
 
 - target path를 정규화합니다. 예: `F:mptech` -> `F:/mptech`.
-- target folder를 project root로 사용하고, 하위 `jjamppong-harness/` 폴더를 남기지 않습니다.
-- target이 기존 git repo면 기존 project `origin`을 보존합니다.
-- target에 `origin`이 없으면 project repo origin을 추가합니다.
-- target `origin`이 template source면 project repo origin으로 바꿉니다.
-- GitHub CLI가 있고 remote repo가 없으면 project private repo를 만듭니다.
+- 대상 폴더를 프로젝트 루트로 사용하고, 하위 `jjamppong-harness/` 폴더를 남기지 않습니다.
+- 대상이 기존 git repo면 기존 project `origin`을 보존합니다.
+- 대상에 `origin`이 없으면 프로젝트 저장소 `origin`을 추가합니다.
+- 대상 `origin`이 템플릿 원본이면 프로젝트 저장소 `origin`으로 바꿉니다.
+- GitHub CLI가 있고 원격 저장소가 없으면 비공개 프로젝트 저장소를 만듭니다.
 - 충돌이 있으면 `-AllowOverwrite` 승인 전에는 멈춥니다.
 - 새 설치의 `harness/docs/tasks/active/`와 `archive/`를 빈 상태로 둡니다.
 - 기존 프로젝트에 `-AllowOverwrite`로 다시 적용할 때 기존 task 기록을 보존합니다.
@@ -294,13 +294,13 @@ F:/mptech/
   proposals/
 ```
 
-완료 후 `origin`은 template source가 아니라 project repository를 가리켜야 합니다.
+완료 후 `origin`은 템플릿 원본이 아니라 project repository를 가리켜야 합니다.
 
 ```powershell
 git -C 'F:/mptech' remote -v
 ```
 
-## First Prompt
+## 첫 프롬프트
 
 새 프로젝트 저장소를 만든 뒤 Codex에서 생성된 프로젝트 폴더 자체를 열고 이렇게 말합니다.
 
@@ -312,7 +312,7 @@ task brief와 writing plan까지 만든 뒤 구현 전에 리뷰 여부를 물�
 아직 구현하지 마.
 ```
 
-## Directory Layout
+## 폴더 구조
 
 ```text
 <project-root>/
@@ -342,21 +342,21 @@ task brief와 writing plan까지 만든 뒤 구현 전에 리뷰 여부를 물�
   modules/
 ```
 
-## Operating Rules
+## 운영 규칙
 
-| Rule | Meaning |
+| 규칙 | 의미 |
 | --- | --- |
-| Root means root | 하네스 파일은 프로젝트 폴더 바로 아래에 있어야 합니다. |
-| Project remote only | 실제 project root의 `origin`은 project repo를 가리켜야 합니다. |
-| Planning first | PRD와 issue 승인을 거치기 전에는 구현하지 않습니다. |
-| Review before build | 구현 전에는 Mandatory Plan Review Question을 거칩니다. |
-| Modules are gated | `modules/` 코드는 module structure 승인 뒤에만 만듭니다. |
-| Handoff is explicit | `handoff.md`는 사용자가 요청할 때만 갱신합니다. |
-| No silent publish | commit, push, PR, merge, release는 현재 채팅에서 명시 승인 후에만 실행합니다. |
+| root는 root | 하네스 파일은 프로젝트 폴더 바로 아래에 있어야 합니다. |
+| project remote만 사용 | 실제 project root의 `origin`은 project repo를 가리켜야 합니다. |
+| 계획 먼저 | PRD와 이슈 승인을 거치기 전에는 구현하지 않습니다. |
+| 구현 전 리뷰 | 구현 전에는 Mandatory Plan Review Question을 거칩니다. |
+| module은 gate 통과 후 | `modules/` 코드는 module structure 승인 뒤에만 만듭니다. |
+| handoff는 명시 요청 때만 | `handoff.md`는 사용자가 요청할 때만 갱신합니다. |
+| 조용한 publish 금지 | commit, push, PR, merge, release는 현재 채팅에서 명시 승인 후에만 실행합니다. |
 
-## Common Mistakes
+## 자주 생기는 실수
 
-### Files Landed One Folder Too Deep
+### 파일이 한 폴더 깊게 들어간 경우
 
 잘못된 구조:
 
@@ -372,11 +372,11 @@ F:/mptech/harness/
 F:/mptech/modules/
 ```
 
-해결은 installer를 project repository root에 다시 적용하는 것입니다. 이미 잘못 생긴 `F:/mptech/jjamppong-harness/` 안에 중요한 변경사항이 있으면 먼저 확인하고, 설치 결과는 반드시 `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`가 되게 정리합니다.
+해결은 설치 스크립트를 프로젝트 저장소 루트에 다시 적용하는 것입니다. 이미 잘못 생긴 `F:/mptech/jjamppong-harness/` 안에 중요한 변경사항이 있으면 먼저 확인하고, 설치 결과는 반드시 `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`가 되게 정리합니다.
 
-### Origin Still Points To The Template
+### 원격 저장소가 아직 템플릿을 가리키는 경우
 
-프로젝트 root의 `origin`이 template source라면 아직 설치 완료가 아닙니다.
+프로젝트 루트의 `origin`이 템플릿 원본이라면 아직 설치 완료가 아닙니다.
 
 ```powershell
 git -C 'F:/mptech' remote -v
@@ -390,7 +390,7 @@ git -C 'F:/mptech' remote -v
 
 commit과 push는 이 복구 명령에 포함하지 않습니다. 현재 채팅에서 사용자가 명시 승인한 뒤에만 별도로 실행합니다.
 
-### Codex Starts Coding Immediately
+### Codex가 바로 코딩을 시작하는 경우
 
 아래처럼 규칙 파일을 먼저 읽게 합니다.
 
@@ -399,34 +399,34 @@ commit과 push는 이 복구 명령에 포함하지 않습니다. 현재 채팅�
 Full Workflow대로 진행해줘.
 ```
 
-### Modules Are Created Too Early
+### 모듈 폴더가 너무 빨리 만들어지는 경우
 
 `modules/` 아래 코드는 `harness/state/module-structure.md`가 승인된 뒤에만 만듭니다. 그 전에는 기획 산출물을 `harness/docs/tasks/active/<slug>/` 아래에 둡니다.
 
-## AGENTS.md Management Plugin
+## AGENTS.md 관리 플러그인
 
-This repository includes an optional local Codex plugin at `plugins/agents-md-management/`.
+이 저장소에는 선택적으로 사용할 수 있는 로컬 Codex plugin이 `plugins/agents-md-management/` 아래에 들어 있습니다.
 
-Use it when `AGENTS.md` behavior is confusing or needs maintenance:
+`AGENTS.md` 동작이 헷갈리거나 관리가 필요할 때 사용합니다.
 
-- `agents-md-chain-audit` checks which instruction files Codex actually loads.
-- `agents-md-improver` scores instruction files and proposes targeted fixes.
-- `revise-agents-md` turns reusable session learnings into approved instruction updates.
+- `agents-md-chain-audit`: Codex가 실제로 어떤 instruction file을 읽는지 확인합니다.
+- `agents-md-improver`: instruction file을 점검하고 필요한 수정안을 제안합니다.
+- `revise-agents-md`: 세션에서 얻은 재사용 가능한 배움을 승인된 instruction update로 바꿉니다.
 
-This plugin is not part of the mandatory harness workflow. It is not installed into a personal Codex marketplace unless the user explicitly asks for that later.
+이 plugin은 필수 하네스 작업 흐름의 일부가 아닙니다. 사용자가 나중에 명시적으로 요청하기 전까지 개인 Codex marketplace에 설치하지 않습니다.
 
-## Maintaining The Template
+## 템플릿 유지보수
 
-template 원본을 고칠 때는 `vibedong/jjamppong-harness`를 clone한 template-maintenance checkout에서 작업합니다.
+템플릿 원본을 고칠 때는 `vibedong/jjamppong-harness`를 clone한 template-maintenance checkout에서 작업합니다.
 
-실제 프로젝트를 만들 때는 이 template 원본을 `F:/mptech/jjamppong-harness`로 clone하지 않습니다. `F:/mptech` 자체가 project repository이자 harness root가 되게 만듭니다.
+실제 프로젝트를 만들 때는 이 템플릿 원본을 `F:/mptech/jjamppong-harness`로 clone하지 않습니다. `F:/mptech` 자체가 project repository이자 harness root가 되게 만듭니다.
 
 ```powershell
 git status --short --branch
 ```
 
-이미 template에서 만들어진 project root에는 변경사항이 자동으로 반영되지 않습니다. 필요한 변경은 각 project repository에서 따로 반영합니다.
+이미 템플릿에서 만들어진 project root에는 변경사항이 자동으로 반영되지 않습니다. 필요한 변경은 각 project repository에서 따로 반영합니다.
 
-## Summary
+## 요약
 
-짬뽕하네스는 프로젝트 폴더 자체에 설치되는 private workflow template입니다. Codex가 요구사항을 정리하고, 승인 가능한 문서로 나누고, 리뷰와 검증을 거친 뒤에만 `modules/`에서 실제 제품 작업을 시작하게 만듭니다.
+짬뽕하네스는 프로젝트 폴더 자체에 설치되는 개인용 작업 흐름 템플릿입니다. Codex가 요구사항을 정리하고, 승인 가능한 문서로 나누고, 리뷰와 검증을 거친 뒤에만 `modules/`에서 실제 제품 작업을 시작하게 만듭니다.
