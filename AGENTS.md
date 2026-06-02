@@ -19,6 +19,8 @@ This repository uses 짬뽕하네스 (`jjamppong-harness`), a private agent work
 If the user says they want to make, start, or build a project, for example "ERP 프로젝트 만들고 싶어", first decide whether the current directory is the intended harness root or the template-maintenance checkout.
 
 - Treat shorthand install requests in the form `<template-repo-or-url> <target-path>에 설치해줘` as a request to install this template into the target project root. The repo/url token is the template source; the path-like token is the target harness root.
+- For shorthand install requests, prefer the reusable installer `scripts/install-jjamppong-harness.ps1` from this template source. Do not satisfy the request with a direct clone into the target path.
+- This harness is installed as a project bootstrap/template, not as a package dependency. The target folder becomes the real project root.
 - Normalize Windows drive shorthand before writing. A token shaped like `<drive>:<folder>` means `<drive>:/<folder>` for this harness install flow. Say the normalized target path before making changes.
 - Never satisfy shorthand install by leaving files under a nested folder named after the template repository, such as `<target-root>/jjamppong-harness/` or `<target-root>/ourosuper-harness/`.
 - If the target path is missing, ambiguous, or not a Windows/local path, ask one concise clarification before writing.
@@ -27,6 +29,7 @@ If the user says they want to make, start, or build a project, for example "ERP 
 - If the target path is empty or not a git repository, create or use a project repository named from the target folder, for example `<target-root>` -> `<owner>/<target-folder-name>`, and make the target path the project repository root. Do not leave `origin` pointing at the template source.
 - For a new project folder: create or clone the private project repository so the harness files land directly under the target folder, for example `F:/mptech/AGENTS.md`, not `F:/mptech/jjamppong-harness/AGENTS.md`.
 - If the user names `vibedong/jjamppong-harness.git` as the install source, treat it as a template source, not as the final project remote.
+- If the target root `origin` points at `vibedong/jjamppong-harness.git` after installation, treat the install as incomplete. Replace it with the project repository origin derived from the target folder or the user-provided project repo before starting product work.
 - Unless the user gives a different project slug, derive the project slug from the target folder name. Example: `F:/mptech` uses `mptech`.
 - Create or verify the private project repository, for example `vibedong/mptech`, then set the project harness root `origin` to that project repository and push `main` only after explicit user approval for push.
 - Before reporting setup complete, verify `git remote -v` in the project harness root points to the project repository, not to `vibedong/jjamppong-harness.git`.
@@ -51,6 +54,13 @@ If the user says they want to make, start, or build a project, for example "ERP 
 - Use Superpowers for writing plans, implementation, and verification.
 - Use gstack review skills when running plan review.
 - Use Compound Engineering after verification.
+
+## Optional Maintenance Tools
+
+- Use `agents-md-chain-audit` when Codex instruction discovery looks wrong or an `AGENTS.override.md` file may be shadowing another instruction file.
+- Use `agents-md-improver` before broad rewrites of `AGENTS.md` or `AGENTS.override.md`.
+- Use `revise-agents-md` only for reusable learnings that should survive future sessions.
+- These tools are optional maintenance aids, not mandatory steps in the Full Workflow.
 
 ## Required Reads
 

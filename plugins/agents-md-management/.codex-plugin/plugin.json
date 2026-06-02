@@ -1,0 +1,32 @@
+{
+  "name": "agents-md-management",
+  "version": "0.1.0",
+  "description": "Audit, improve, and revise Codex AGENTS.md instruction chains.",
+  "author": {
+    "name": "vibedong"
+  },
+  "repository": "https://github.com/vibedong/jjamppong-harness",
+  "license": "UNLICENSED",
+  "keywords": [
+    "codex",
+    "agents-md",
+    "instructions",
+    "skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AGENTS.md Management",
+    "shortDescription": "Audit and improve Codex instruction files",
+    "longDescription": "Codex-native AGENTS.md management skills for instruction-chain audit, quality scoring, and approved session-learning updates.",
+    "developerName": "vibedong",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use AGENTS.md Management to audit this repo.",
+      "Propose concise AGENTS.md updates from this session."
+    ]
+  }
+}

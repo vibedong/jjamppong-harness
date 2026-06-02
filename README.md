@@ -96,6 +96,28 @@ Readiness 기준은 `harness/docs/agents/matt-pocock-skills.md`에 있습니다.
 
 설치 대상 폴더 자체가 harness root입니다. `F:/mptech`에 설치한다면 최종 구조는 `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`가 바로 보여야 합니다.
 
+### Recommended Installer
+
+이 하네스는 npm package처럼 설치하는 라이브러리가 아닙니다. GitHub template source를 임시로 읽어서 대상 프로젝트 폴더에 펼치는 project bootstrap입니다.
+
+Codex가 짧은 설치 요청을 받으면 직접 `git clone <template> <target>` 하지 말고, 이 스크립트를 우선 사용해야 합니다.
+
+```powershell
+.\scripts\install-jjamppong-harness.ps1 vibedong/jjamppong-harness.git F:mptech
+```
+
+예상 결과:
+
+```text
+F:/mptech/
+  AGENTS.md
+  README.md
+  harness/
+  modules/
+```
+
+설치 후 `origin`은 template source가 아니라 project repository여야 합니다. 예를 들어 `F:/mptech`면 기본 project origin은 `https://github.com/vibedong/mptech.git`입니다. commit과 push는 여전히 사용자의 명시 승인 전까지 하지 않습니다.
+
 ### Natural Language Install
 
 Codex에게 짧게 말해도 됩니다.
@@ -142,14 +164,15 @@ Windows drive shorthand는 설치 전에 정규화합니다. 예를 들어 `<dri
 
 Codex가 이 짧은 문장을 받으면 다음 순서로 처리해야 합니다.
 
-1. `<target-path>`를 정규화했다고 먼저 말합니다.
-2. `<template-repo-or-url>`는 template source로만 사용합니다.
-3. 최종 project root는 정규화된 `<target-root>`입니다.
-4. `<target-root>`가 기존 git repo면 `origin`을 보존하고 template 내용만 `.git/` 제외 복사합니다.
-5. `<target-root>`가 비어 있거나 repo가 아니면 target folder name으로 project repository를 만들거나 확인하고, `origin`이 project repo를 가리키게 합니다.
-6. `README.md`, `AGENTS.md`, `harness/`, `modules/`, `module-template/`, `proposals/` 충돌이 있으면 덮어쓰기 전에 멈추고 물어봅니다.
-7. 완료 전 `AGENTS.md`, `harness/`, `modules/`가 `<target-root>` 바로 아래 있는지 확인합니다.
-8. 완료 전 `origin`이 template source가 아닌지 확인합니다.
+1. 가능하면 `scripts/install-jjamppong-harness.ps1`를 사용합니다.
+2. `<target-path>`를 정규화했다고 먼저 말합니다.
+3. `<template-repo-or-url>`는 template source로만 사용합니다.
+4. 최종 project root는 정규화된 `<target-root>`입니다.
+5. `<target-root>`가 기존 git repo면 `origin`을 보존합니다. 단, `origin`이 template source라면 잘못된 설치 상태이므로 project repo origin으로 바꿉니다.
+6. `<target-root>`가 비어 있거나 repo가 아니면 target folder name으로 project repository를 만들거나 확인하고, `origin`이 project repo를 가리키게 합니다.
+7. `README.md`, `AGENTS.md`, `harness/`, `modules/`, `module-template/`, `proposals/` 충돌이 있으면 덮어쓰기 전에 멈추고 물어봅니다.
+8. 완료 전 `AGENTS.md`, `harness/`, `modules/`가 `<target-root>` 바로 아래 있는지 확인합니다.
+9. 완료 전 `origin`이 template source가 아닌지 확인합니다.
 
 ### New Project From Template
 
@@ -365,6 +388,18 @@ Full Workflow대로 진행해줘.
 ### Modules Are Created Too Early
 
 `modules/` 아래 코드는 `harness/state/module-structure.md`가 승인된 뒤에만 만듭니다. 그 전에는 기획 산출물을 `harness/docs/tasks/active/<slug>/` 아래에 둡니다.
+
+## AGENTS.md Management Plugin
+
+This repository includes an optional local Codex plugin at `plugins/agents-md-management/`.
+
+Use it when `AGENTS.md` behavior is confusing or needs maintenance:
+
+- `agents-md-chain-audit` checks which instruction files Codex actually loads.
+- `agents-md-improver` scores instruction files and proposes targeted fixes.
+- `revise-agents-md` turns reusable session learnings into approved instruction updates.
+
+This plugin is not part of the mandatory harness workflow. It is not installed into a personal Codex marketplace unless the user explicitly asks for that later.
 
 ## Maintaining The Template
 
