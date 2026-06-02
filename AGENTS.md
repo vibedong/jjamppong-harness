@@ -70,6 +70,7 @@ At the start of a substantive task, read:
 
 1. `harness/rules/workflow.md`
 2. `harness/rules/rules.md`
+3. `harness/state/module-structure.md`
 
 ## Conditional Reads
 
@@ -84,6 +85,7 @@ At the start of a substantive task, read:
 - Do not silently skip the Full Workflow.
 - Do not invent module folders outside the approved module structure.
 - If `modules/` is empty or `harness/state/module-structure.md` says no module structure is approved, stop before product module folders or product code. Use the planning gate to propose and approve module structure first, then record it in `harness/state/module-structure.md`.
+- If a user asks to build a product feature and no module structure is approved, stop before `to-prd`, `to-issues`, `writing-plan`, module folders, or product code. First run the Module Structure Gate and ask the user to approve or revise the project module structure.
 - If the request cannot create or change product module folders or product code, record the Module Structure Gate as not applicable and do not ask module-structure questions.
 - Use root `handoff.md` only for global next-chat/context transfer. Task summaries belong under `harness/docs/tasks/active/<YYYY-MM-DD-short-topic>/brief.md`.
 - Do not write product code in the `jjamppong-harness` source/template repository.

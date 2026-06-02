@@ -88,7 +88,7 @@ flowchart LR
 
 질문 단계는 한 번에 하나씩 묻고, 선택한 route, 확인한 근거, 근거로 답한 질문, 사용자에게 물은 질문, 보류한 미정사항, 남은 결정을 `harness/docs/tasks/active/<slug>/grill.md`에 기록합니다. PRD, 이슈 분해, 모듈 구조, writing plan, 구현은 핵심 불확실성이 해결되거나 사용자가 명시적으로 보류를 승인한 뒤에 진행합니다.
 
-`modules/`가 비어 있거나 `harness/state/module-structure.md`에 승인된 모듈 구조가 없다고 되어 있으면, Codex는 제품 모듈 폴더를 만들기 전에 사용자와 모듈 구조를 먼저 정해야 합니다. 요청이 제품 모듈 폴더나 제품 코드를 만들거나 바꾸는 일이 아니라면, Codex는 Module Structure Gate를 해당 없음으로 기록하고 모듈 구조 질문을 하지 않습니다.
+`modules/`가 비어 있거나 `harness/state/module-structure.md`에 승인된 모듈 구조가 없다고 되어 있으면, Codex는 제품 PRD, 이슈 분해, writing plan, 제품 모듈 폴더, 제품 코드로 넘어가기 전에 사용자와 모듈 구조를 먼저 정해야 합니다. 요청이 제품 모듈 폴더나 제품 코드를 만들거나 바꾸는 일이 아니라면, Codex는 Module Structure Gate를 해당 없음으로 기록하고 모듈 구조 질문을 하지 않습니다.
 
 ## 하네스 적용 예상 시나리오
 
@@ -113,6 +113,14 @@ flowchart LR
 8. 제품 코드나 모듈 폴더가 생길 수 있고 승인된 모듈 구조가 없다면, 모듈 구조 옵션 2~3개를 쉬운 말로 제안합니다.
 9. 승인된 모듈 구조를 `harness/state/module-structure.md`에 기록합니다.
 10. 그 다음에만 PRD, 이슈 분해, task brief, writing plan, 계획 리뷰, 구현, 검증으로 넘어갑니다.
+
+### 첫 제품 요청에서 기대되는 흐름
+
+새로 설치한 프로젝트는 `harness/state/module-structure.md`가 미승인 상태로 시작합니다. 이 상태에서 사용자가 "나라장터 크롤러를 만들고 싶어"처럼 제품 기능을 요청하면 Codex는 바로 PRD나 구현 계획으로 가지 않습니다.
+
+먼저 기존 코드와 문서를 확인해 `grill-with-docs` 또는 `grill-me`를 고르고, 핵심 불확실성을 정리한 뒤 Module Structure Gate에서 프로젝트 폴더 구조 선택지를 제안해야 합니다. 사용자가 구조를 승인하면 그 내용을 `harness/state/module-structure.md`에 기록하고, 그 다음에 PRD, 이슈, writing-plan으로 넘어갑니다.
+
+잘못된 흐름은 `intake.md`만 쓰고 바로 `to-prd`나 `writing-plan`으로 넘어가는 것입니다. `modules/`가 비어 있고 승인된 module structure가 없다면, 제품 요청은 반드시 구조 승인 질문에서 멈춰야 합니다.
 
 기존 코드가 스파게티 구조라면 다음처럼 처리합니다.
 

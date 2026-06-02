@@ -376,9 +376,34 @@ function Verify-Install {
     }
   }
 
+  $requiredTextChecks = @(
+    @{ Path = 'AGENTS.md'; Pattern = 'harness/state/module-structure.md' },
+    @{ Path = 'AGENTS.md'; Pattern = 'stop before `to-prd`, `to-issues`, `writing-plan`, module folders, or product code' },
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'Grill Routing And Completion Gate' },
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'Module Structure Gate' },
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'before `to-prd`, `to-issues`, `writing-plan`' },
+    @{ Path = 'harness/rules/rules.md'; Pattern = 'must not run product `to-prd`, product `to-issues`, product `writing-plan`' }
+  )
+
+  foreach ($check in $requiredTextChecks) {
+    $path = Join-Path $Target $check.Path
+    $content = Get-Content -LiteralPath $path -Raw
+    if (-not $content.Contains($check.Pattern)) {
+      throw "Installed harness is missing required gate text in $($check.Path): $($check.Pattern)"
+    }
+  }
+
   foreach ($nestedName in @('jjamppong-harness', 'ourosuper-harness')) {
     if (Test-Path -LiteralPath (Join-Path $Target $nestedName)) {
       throw "Nested template folder was created: $nestedName"
+    }
+  }
+
+  foreach ($relativePath in @('harness/docs/tasks/active', 'harness/docs/tasks/archive')) {
+    $taskDir = Join-Path $Target $relativePath
+    $taskItems = @(Get-ChildItem -LiteralPath $taskDir -Force | Where-Object { $_.Name -ne '.gitkeep' })
+    if ($taskItems.Count -ne 0) {
+      throw "Installed task artifact directory is not empty: $relativePath"
     }
   }
 

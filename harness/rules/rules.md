@@ -28,7 +28,7 @@ Matt Pocock Planning Gate
   Ask one user-facing question at a time and wait for the user's answer.
   Do not ask duplicate user-facing questions for facts already answered by inspected code/docs.
   Record grill route, inspected evidence, answered questions, deferred unknowns, and remaining decisions in harness/docs/tasks/active/<slug>/grill.md.
-  Run Module Structure Gate before creating or changing product module folders.
+  Run Module Structure Gate before product PRD, issue decomposition, writing plans, product module folders, or product code when no module structure is approved.
   For non-module work, record Module Structure Gate as not applicable and do not ask module-structure questions.
   Use to-prd only after the grill gate has resolved or explicitly deferred core uncertainties.
   Stop for User PRD Approval.
@@ -83,11 +83,11 @@ Module type and folder standards are not decided ad hoc.
 
 Creating or changing module types and folder standards is itself substantive work and follows the Full Workflow.
 
-The Module Structure Gate runs before any product module folder creation, product module folder change, or product code writing that depends on a module structure.
+The Module Structure Gate runs before `to-prd`, `to-issues`, `writing-plan`, product module folder creation, product module folder changes, or product code writing when the project has no approved module structure.
 
 If the request cannot create or change product module folders or product code, Codex records `Module Structure Gate: not applicable` in `harness/docs/tasks/active/<slug>/grill.md`, does not ask module-structure questions, and continues with the applicable workflow.
 
-If `modules/` is empty, or if `harness/state/module-structure.md` says no project module structure has been approved, Codex must not create product module folders or write product code.
+If `modules/` is empty, or if `harness/state/module-structure.md` says no project module structure has been approved, Codex must not run product `to-prd`, product `to-issues`, product `writing-plan`, create product module folders, or write product code.
 
 Before product module work starts, Codex must:
 

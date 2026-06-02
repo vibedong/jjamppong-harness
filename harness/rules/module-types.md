@@ -10,6 +10,8 @@ Module structure design is a substantive planning decision inside the Full Workf
 
 It is handled by the Module Structure Gate, not by an ad hoc side flow.
 
+When a project has no approved module structure, the first product request uses the Module Structure Gate before product PRD, issue decomposition, writing plans, module folders, or product code.
+
 ## When To Use This Rule
 
 Read this file when:

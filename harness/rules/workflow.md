@@ -80,13 +80,13 @@ If a question was answerable from evidence, do not ask it again in user-facing p
 
 ### Module Structure Gate
 
-Run this gate before creating or changing product module folders.
+Run this gate before `to-prd`, `to-issues`, `writing-plan`, product module folders, or product code when the request may create or change product module folders or product code.
 
 If the request cannot create or change product module folders or product code, record `Module Structure Gate: not applicable` in `harness/docs/tasks/active/<slug>/grill.md` and do not ask module-structure questions.
 
 If `modules/` is empty or `harness/state/module-structure.md` says no module structure is approved:
 
-1. Stop before creating module folders or product code.
+1. Stop before `to-prd`, `to-issues`, `writing-plan`, module folders, or product code.
 2. Explain in plain language that the project has no approved module structure yet.
 3. Propose two or three module structure options based on the resolved grilling context.
 4. Give one recommendation with reasoning.
