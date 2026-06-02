@@ -133,18 +133,27 @@ flowchart LR
 
 ## 요구사항
 
-사용자는 아래 준비가 필요합니다.
+이 하네스는 아래 도구와 skill이 있다는 전제로 동작합니다.
+
+### 필수
 
 - GitHub 계정
 - 이 private template 저장소에 접근할 권한
 - Git
-- GitHub CLI, 선택 사항이지만 추천
 - Codex 앱
 - Matt Pocock skills
 - Superpowers
 - gstack 리뷰 skill
 - Compound Engineering `ce-compound`
 - vowline
+
+### 권장
+
+- GitHub CLI `gh`
+- AGENTS.md Management plugin
+- PowerShell 또는 기본 터미널 사용 가능 상태
+
+필수 skill이나 plugin이 없으면 Codex는 조용히 비슷한 방식으로 대체하지 말고 멈춰야 합니다. 어떤 항목이 없는지 사용자에게 말하고, 설치 또는 활성화 후 다시 진행해야 합니다.
 
 Matt Pocock skills가 없다면 먼저 설치합니다.
 
