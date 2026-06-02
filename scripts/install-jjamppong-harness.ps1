@@ -70,6 +70,50 @@ function Test-SameRepo {
   return (Get-RepoKey $A) -eq (Get-RepoKey $B)
 }
 
+function Get-ExistingOrigin {
+  param([string]$Target)
+
+  if (-not (Test-Path -LiteralPath $Target)) {
+    return $null
+  }
+
+  $oldErrorAction = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $origin = git -C $Target remote get-url origin 2>$null
+    $originExit = $LASTEXITCODE
+  }
+  finally {
+    $ErrorActionPreference = $oldErrorAction
+  }
+
+  if ($originExit -eq 0 -and -not [string]::IsNullOrWhiteSpace($origin)) {
+    return $origin.Trim()
+  }
+
+  return $null
+}
+
+function Test-TemplateSourceOrigin {
+  param(
+    [string]$Origin,
+    [string]$Template
+  )
+
+  if (Test-SameRepo $Origin $Template) {
+    return $true
+  }
+
+  if (Test-Path -LiteralPath $Template) {
+    $templateOrigin = Get-ExistingOrigin -Target $Template
+    if ($templateOrigin -and (Test-SameRepo $Origin $templateOrigin)) {
+      return $true
+    }
+  }
+
+  return $false
+}
+
 function Get-ProjectRepoUrl {
   param(
     [string]$Template,
@@ -208,7 +252,7 @@ function Set-ProjectOrigin {
     return
   }
 
-  if (Test-SameRepo $origin $Template) {
+  if (Test-TemplateSourceOrigin -Origin $origin -Template $Template) {
     git -C $Target remote set-url origin $Project
     if ($LASTEXITCODE -ne 0) {
       throw "Failed to replace template origin with project origin."
@@ -247,6 +291,79 @@ function Copy-TemplateRoot {
   }
 }
 
+function Clear-InstalledTaskArtifacts {
+  param([string]$Target)
+
+  $resolvedTarget = (Resolve-Path -LiteralPath $Target).Path
+  foreach ($relativePath in @('harness/docs/tasks/active', 'harness/docs/tasks/archive')) {
+    $taskDir = Join-Path $resolvedTarget $relativePath
+    if (-not (Test-Path -LiteralPath $taskDir)) {
+      New-Item -ItemType Directory -Path $taskDir -Force | Out-Null
+      continue
+    }
+
+    $resolvedTaskDir = (Resolve-Path -LiteralPath $taskDir).Path
+    $expectedPrefix = $resolvedTarget + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedTaskDir.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Refusing to clean task artifacts outside target root: $resolvedTaskDir"
+    }
+
+    Get-ChildItem -LiteralPath $resolvedTaskDir -Force | Remove-Item -Recurse -Force
+  }
+}
+
+function Backup-TargetTaskArtifacts {
+  param(
+    [string]$Target,
+    [string]$BackupRoot
+  )
+
+  $resolvedTarget = (Resolve-Path -LiteralPath $Target).Path
+  foreach ($relativePath in @('harness/docs/tasks/active', 'harness/docs/tasks/archive')) {
+    $taskDir = Join-Path $resolvedTarget $relativePath
+    if (-not (Test-Path -LiteralPath $taskDir)) {
+      continue
+    }
+
+    $resolvedTaskDir = (Resolve-Path -LiteralPath $taskDir).Path
+    $expectedPrefix = $resolvedTarget + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedTaskDir.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Refusing to back up task artifacts outside target root: $resolvedTaskDir"
+    }
+
+    $backupDir = Join-Path $BackupRoot $relativePath
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+    foreach ($item in @(Get-ChildItem -LiteralPath $resolvedTaskDir -Force)) {
+      Copy-Item -LiteralPath $item.FullName -Destination $backupDir -Recurse -Force
+    }
+  }
+}
+
+function Restore-TargetTaskArtifacts {
+  param(
+    [string]$Target,
+    [string]$BackupRoot
+  )
+
+  if (-not (Test-Path -LiteralPath $BackupRoot)) {
+    return
+  }
+
+  $resolvedTarget = (Resolve-Path -LiteralPath $Target).Path
+  foreach ($relativePath in @('harness/docs/tasks/active', 'harness/docs/tasks/archive')) {
+    $backupDir = Join-Path $BackupRoot $relativePath
+    if (-not (Test-Path -LiteralPath $backupDir)) {
+      continue
+    }
+
+    $taskDir = Join-Path $resolvedTarget $relativePath
+    New-Item -ItemType Directory -Path $taskDir -Force | Out-Null
+    foreach ($item in @(Get-ChildItem -LiteralPath $backupDir -Force)) {
+      Copy-Item -LiteralPath $item.FullName -Destination $taskDir -Recurse -Force
+    }
+  }
+}
+
 function Verify-Install {
   param(
     [string]$Target,
@@ -269,7 +386,7 @@ function Verify-Install {
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($origin)) {
     throw 'Installed project root has no origin.'
   }
-  if (Test-SameRepo $origin $Template) {
+  if (Test-TemplateSourceOrigin -Origin $origin -Template $Template) {
     throw "Installed project origin still points at template source: $origin"
   }
 
@@ -279,19 +396,33 @@ function Verify-Install {
 
 $normalizedTemplate = Normalize-TemplateSource $TemplateSource
 $target = Normalize-TargetPath $TargetPath
-$projectRepoUrl = Get-ProjectRepoUrl -Template $normalizedTemplate -Target $target -ExplicitRepo $ProjectRepo -ExplicitOwner $Owner
 
 Write-Output "Template source: $normalizedTemplate"
 Write-Output "Target project root: $target"
-Write-Output "Project origin: $projectRepoUrl"
 
 New-Item -ItemType Directory -Path $target -Force | Out-Null
-Ensure-GitHubRepo -RepoUrl $projectRepoUrl -Skip:$SkipGitHubRepo
+$gitTop = Get-GitTopLevel $target
+if ($gitTop -and $gitTop -ne $target) {
+  throw "Target is inside another git repository. Open or install at the project root: $gitTop"
+}
+$existingOrigin = Get-ExistingOrigin -Target $target
+$hasExistingProjectOrigin = $existingOrigin -and -not (Test-TemplateSourceOrigin -Origin $existingOrigin -Template $normalizedTemplate)
+if ($hasExistingProjectOrigin) {
+  $projectRepoUrl = $existingOrigin
+}
+else {
+  $projectRepoUrl = Get-ProjectRepoUrl -Template $normalizedTemplate -Target $target -ExplicitRepo $ProjectRepo -ExplicitOwner $Owner
+}
+
+Write-Output "Project origin candidate: $projectRepoUrl"
 
 $tempBase = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
 $tempRoot = Join-Path $tempBase ('jjamppong-harness-' + [guid]::NewGuid().ToString('N'))
 $sourceRoot = $null
 $createdTempClone = $false
+$taskArtifactBackupRoot = Join-Path $tempBase ('jjamppong-task-artifacts-' + [guid]::NewGuid().ToString('N'))
+$hadTargetTaskArtifacts = $false
+$installCompleted = $false
 
 try {
   if (Test-Path -LiteralPath $normalizedTemplate) {
@@ -306,9 +437,25 @@ try {
     $createdTempClone = $true
   }
 
+  $hadTargetTaskArtifacts = Test-Path -LiteralPath (Join-Path $target 'harness/docs/tasks')
+  if ($hadTargetTaskArtifacts) {
+    Backup-TargetTaskArtifacts -Target $target -BackupRoot $taskArtifactBackupRoot
+  }
   Copy-TemplateRoot -Source $sourceRoot -Target $target -Overwrite:$AllowOverwrite
+  Clear-InstalledTaskArtifacts -Target $target
+  if ($hadTargetTaskArtifacts) {
+    Restore-TargetTaskArtifacts -Target $target -BackupRoot $taskArtifactBackupRoot
+  }
   Set-ProjectOrigin -Target $target -Template $normalizedTemplate -Project $projectRepoUrl
+  $installedOrigin = git -C $target remote get-url origin
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($installedOrigin)) {
+    throw 'Installed project root has no origin after origin setup.'
+  }
+  if (-not $hasExistingProjectOrigin) {
+    Ensure-GitHubRepo -RepoUrl $installedOrigin -Skip:$SkipGitHubRepo
+  }
   Verify-Install -Target $target -Template $normalizedTemplate
+  $installCompleted = $true
 }
 finally {
   if ($createdTempClone -and (Test-Path -LiteralPath $tempRoot)) {
@@ -318,6 +465,19 @@ finally {
       throw "Refusing to remove unexpected temp path: $resolvedTemp"
     }
     Remove-Item -LiteralPath $resolvedTemp -Recurse -Force
+  }
+  if (Test-Path -LiteralPath $taskArtifactBackupRoot) {
+    $resolvedBackup = (Resolve-Path -LiteralPath $taskArtifactBackupRoot).Path
+    $expectedPrefix = $tempBase + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedBackup.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase) -or -not (Split-Path -Leaf $resolvedBackup).StartsWith('jjamppong-task-artifacts-')) {
+      throw "Refusing to remove unexpected task artifact backup: $resolvedBackup"
+    }
+    if ($installCompleted) {
+      Remove-Item -LiteralPath $resolvedBackup -Recurse -Force
+    }
+    else {
+      Write-Output "Preserved task artifact backup after failed install: $resolvedBackup"
+    }
   }
 }
 

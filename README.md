@@ -33,6 +33,8 @@ GitHub template source는 `vibedong/jjamppong-harness`입니다.
 | `proposals/` | live rule을 바꾸기 전 검토하는 제안 공간 |
 | `handoff.md` | 사용자가 요청했을 때만 갱신하는 새 채팅 인계 문서 |
 
+새 프로젝트에 설치할 때 `harness/docs/tasks/active/`와 `harness/docs/tasks/archive/`는 빈 폴더로 시작합니다. Template maintenance 과정에서 생긴 task artifact는 새 프로젝트로 복사하지 않습니다. 기존 프로젝트에 `-AllowOverwrite`로 다시 적용할 때는 그 프로젝트의 기존 task 기록을 지우지 않습니다.
+
 ## How It Works
 
 ```mermaid
@@ -53,21 +55,81 @@ The default full workflow is:
 
 1. Request Intake
 2. setup-matt-pocock-skills Readiness Check
-3. grill-with-docs
-4. to-prd
-5. User PRD Approval
-6. to-issues
-7. User Issue Approval
-8. Task Brief
-9. Superpowers Writing Plans
-10. Mandatory Plan Review Question
-11. Implementation / Apply
-12. Verification
-13. ce-compound
-14. Archive Task Artifacts
-15. Learning Update Question
+3. Grill Routing And Completion Gate
+4. Grill Result Record
+5. Module Structure Gate
+6. to-prd
+7. User PRD Approval
+8. to-issues
+9. User Issue Approval
+10. Task Brief
+11. Superpowers Writing Plans
+12. Mandatory Plan Review Question
+13. Implementation / Apply
+14. Verification
+15. ce-compound
+16. Archive Task Artifacts
+17. Learning Update Question
 
 작은 작업도 기본적으로 같은 흐름을 탑니다. 예외를 만들고 싶으면 live rule을 바로 바꾸지 말고 `proposals/`에서 먼저 검토합니다.
+
+## Planning Behavior
+
+짬뽕하네스는 바로 PRD나 module 구조로 가지 않습니다.
+
+Planning starts by choosing the right grilling flow:
+
+- `grill-with-docs`: use when existing code, docs, candidate lists, domain glossary, ADRs, or prior implementations can answer or sharpen the request.
+- `grill-me`: use when the request is greenfield, product-intent driven, or lacks enough existing project evidence.
+
+In plain language: Codex should first check what already exists, then ask only the questions that still need your decision.
+
+For example, if a user asks for a 나라장터 crawler and mentions an existing `dailynara` folder, Codex should inspect `dailynara` first with `grill-with-docs`. It should ask the user only for decisions that the code cannot answer.
+
+The grill phase asks one question at a time and records the route, inspected evidence, answered questions, deferred unknowns, and remaining decisions in `harness/docs/tasks/active/<slug>/grill.md`. PRD, issue breakdown, module structure, writing plan, and implementation wait until core uncertainties are resolved or explicitly deferred.
+
+If `modules/` is empty or `harness/state/module-structure.md` says no module structure is approved, Codex must decide module structure with the user before creating product module folders. If the request cannot create or change product module folders or product code, Codex records the Module Structure Gate as not applicable and does not ask module-structure questions.
+
+## Expected Harness Scenario
+
+하네스가 적용된 프로젝트에서 사용자가 이렇게 말한다고 가정합니다.
+
+```text
+나라장터에서 실시설계들을 크롤링해서 원하는 값만 추출하는 도구를 만들고싶어.
+기존에 만든건 dailynara라는 폴더에 있거든.
+전체 추출을 먼저 진행하고, 통과/검토필요/제외로 나누고,
+사용자가 제외한 데이터는 다음부터 실수하지 않게 반영하고싶어.
+```
+
+Expected agent behavior:
+
+1. Read `AGENTS.md` and `harness/rules/` first.
+2. Do not start coding.
+3. Choose `grill-with-docs` because the request names existing code or prior work.
+4. Inspect `dailynara/`, candidate lists, existing crawler flow, saved outputs, and relevant docs before asking the user.
+5. Answer from evidence when code or docs already answer the question.
+6. Ask only the remaining decision questions, one at a time.
+7. Record the route, inspected evidence, answered questions, user answers, deferred unknowns, and blockers in `harness/docs/tasks/active/<slug>/grill.md`.
+8. If product code or module folders may be created and no module structure is approved, propose two or three module structure options in plain language.
+9. Record the approved module structure in `harness/state/module-structure.md`.
+10. Only then move to PRD, issue breakdown, task brief, writing plan, plan review, implementation, and verification.
+
+If the existing code is spaghetti:
+
+1. Do not rewrite everything immediately.
+2. Identify the risky coupling in plain language, with file evidence.
+3. Preserve the known behavior first, for example by capturing current outputs or fixtures.
+4. Separate cleanup issues from feature issues.
+5. Recommend the smallest structure that lets the next feature ship without making the mess worse.
+6. Ask for approval before changing module structure or product code.
+
+Bad behavior this harness is meant to prevent:
+
+- Starting implementation before reading existing code.
+- Asking the user questions that `dailynara/` already answers.
+- Creating ad hoc folders under `modules/`.
+- Jumping from a vague request straight to PRD or code.
+- Saying the work is complete without verification evidence.
 
 ## Requirements
 
@@ -174,20 +236,54 @@ Codex가 이 짧은 문장을 받으면 다음 순서로 처리해야 합니다.
 8. 완료 전 `AGENTS.md`, `harness/`, `modules/`가 `<target-root>` 바로 아래 있는지 확인합니다.
 9. 완료 전 `origin`이 template source가 아닌지 확인합니다.
 
-### New Project From Template
+### Project Bootstrap With Installer
 
-새 프로젝트는 GitHub template 기능으로 프로젝트 전용 private repository를 만듭니다.
+새 프로젝트와 기존 프로젝트 모두 같은 installer를 사용합니다. 일반 설치 경로에서 GitHub template clone flow를 직접 쓰지 마세요. 그 방식은 root 배치, project `origin` 검증, template-maintenance task artifact 제거를 우회합니다.
+
+Codex가 이미 이 저장소를 열고 있다면:
 
 ```powershell
-Push-Location 'F:/'
-gh repo create <project-name> --private --template vibedong/jjamppong-harness --clone
-Pop-Location
+.\scripts\install-jjamppong-harness.ps1 vibedong/jjamppong-harness.git F:mptech
 ```
+
+Codex가 installer 파일을 아직 갖고 있지 않다면 template source를 임시 폴더에만 clone한 뒤 installer만 실행합니다:
+
+```powershell
+$tempBase = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+$installerRoot = Join-Path $tempBase ('jjamppong-harness-installer-' + [guid]::NewGuid().ToString('N'))
+try {
+  git clone https://github.com/vibedong/jjamppong-harness.git $installerRoot
+  if ($LASTEXITCODE -ne 0) { throw 'Installer source clone failed' }
+  & (Join-Path $installerRoot 'scripts/install-jjamppong-harness.ps1') 'vibedong/jjamppong-harness.git' 'F:mptech'
+  if ($LASTEXITCODE -ne 0) { throw "Installer failed with exit code $LASTEXITCODE" }
+}
+finally {
+  if (Test-Path -LiteralPath $installerRoot) {
+    $resolved = (Resolve-Path -LiteralPath $installerRoot).Path
+    if (-not $resolved.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or -not (Split-Path -Leaf $resolved).StartsWith('jjamppong-harness-installer-')) {
+      throw "Refusing to remove unexpected installer temp path: $resolved"
+    }
+    Remove-Item -LiteralPath $resolved -Recurse -Force
+  }
+}
+```
+
+Installer가 처리하는 일:
+
+- target path를 정규화합니다. 예: `F:mptech` -> `F:/mptech`.
+- target folder를 project root로 사용하고, 하위 `jjamppong-harness/` 폴더를 남기지 않습니다.
+- target이 기존 git repo면 기존 project `origin`을 보존합니다.
+- target에 `origin`이 없으면 project repo origin을 추가합니다.
+- target `origin`이 template source면 project repo origin으로 바꿉니다.
+- GitHub CLI가 있고 remote repo가 없으면 project private repo를 만듭니다.
+- 충돌이 있으면 `-AllowOverwrite` 승인 전에는 멈춥니다.
+- 새 설치의 `harness/docs/tasks/active/`와 `archive/`를 빈 상태로 둡니다.
+- 기존 프로젝트에 `-AllowOverwrite`로 다시 적용할 때 기존 task 기록을 보존합니다.
 
 예상 결과:
 
 ```text
-F:/<project-name>/
+F:/mptech/
   AGENTS.md
   README.md
   CONTEXT.md
@@ -198,92 +294,10 @@ F:/<project-name>/
   proposals/
 ```
 
-완료 후 `origin`은 template source가 아니라 새 project repository를 가리켜야 합니다.
+완료 후 `origin`은 template source가 아니라 project repository를 가리켜야 합니다.
 
 ```powershell
-git -C 'F:/<project-name>' remote -v
-```
-
-### Apply Harness Into Existing Repo Root
-
-이미 `F:/mptech` 같은 프로젝트 repository가 있으면 template source를 중첩 clone하지 않습니다. template 내용을 project root에 복사하고, 기존 `origin`은 유지합니다.
-
-Rules:
-
-- Final files must be `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`.
-- Do not leave the files under `F:/mptech/jjamppong-harness/`.
-- Copy template contents into the project root excluding `.git/`.
-- Preserve the existing project repository `origin`.
-- Stop on top-level collisions such as `README.md`, `AGENTS.md`, `harness/`, or `modules/`.
-
-Safe PowerShell flow:
-
-```powershell
-$target = (Resolve-Path -LiteralPath 'F:/mptech').Path
-$beforeOrigin = git -C $target remote get-url origin
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($beforeOrigin)) {
-  throw "Target must be an existing git repository with an origin remote"
-}
-
-$tempBaseRaw = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path
-$tempBase = $tempBaseRaw.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
-$tempRoot = Join-Path $tempBase ('jjamppong-harness-' + [guid]::NewGuid().ToString('N'))
-
-try {
-  git clone https://github.com/vibedong/jjamppong-harness.git $tempRoot
-  if ($LASTEXITCODE -ne 0) { throw "Template clone failed" }
-
-  $source = (Resolve-Path -LiteralPath $tempRoot).Path
-  if (-not $source.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or -not (Split-Path -Leaf $source).StartsWith('jjamppong-harness-')) {
-    throw "Unexpected temp clone path: $source"
-  }
-
-  $collisions = @()
-  foreach ($item in Get-ChildItem -LiteralPath $source -Force) {
-    if ($item.Name -eq '.git') { continue }
-    $destination = Join-Path $target $item.Name
-    if (Test-Path -LiteralPath $destination) {
-      $collisions += $destination
-    }
-  }
-  if ($collisions) {
-    $collisions
-    throw "Destination collisions found; choose merge, skip, or overwrite per path before continuing"
-  }
-
-  foreach ($item in Get-ChildItem -LiteralPath $source -Force) {
-    if ($item.Name -eq '.git') { continue }
-    Copy-Item -LiteralPath $item.FullName -Destination $target -Recurse -Force
-  }
-
-  $afterOrigin = git -C $target remote get-url origin
-  if ($LASTEXITCODE -ne 0 -or $afterOrigin -ne $beforeOrigin) {
-    throw "origin changed from $beforeOrigin to $afterOrigin"
-  }
-
-  foreach ($required in @('AGENTS.md', 'README.md', 'CONTEXT.md', 'handoff.md', 'harness', 'modules', 'module-template', 'proposals')) {
-    if (-not (Test-Path -LiteralPath (Join-Path $target $required))) {
-      throw "Missing required root item: $required"
-    }
-  }
-
-  foreach ($nestedName in @('jjamppong-harness', 'ourosuper-harness')) {
-    if (Test-Path -LiteralPath (Join-Path $target $nestedName)) {
-      throw "Nested $nestedName folder was created"
-    }
-  }
-
-  git -C $target remote -v
-}
-finally {
-  if (Test-Path -LiteralPath $tempRoot) {
-    $resolvedTemp = (Resolve-Path -LiteralPath $tempRoot).Path
-    if (-not $resolvedTemp.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or -not (Split-Path -Leaf $resolvedTemp).StartsWith('jjamppong-harness-')) {
-      throw "Refusing to remove unexpected temp path: $resolvedTemp"
-    }
-    Remove-Item -LiteralPath $resolvedTemp -Recurse -Force
-  }
-}
+git -C 'F:/mptech' remote -v
 ```
 
 ## First Prompt
@@ -358,7 +372,7 @@ F:/mptech/harness/
 F:/mptech/modules/
 ```
 
-해결은 project repository root로 파일을 옮기거나, 새 project repo를 만든 뒤 `F:/`에서 template clone을 다시 시작하는 것입니다.
+해결은 installer를 project repository root에 다시 적용하는 것입니다. 이미 잘못 생긴 `F:/mptech/jjamppong-harness/` 안에 중요한 변경사항이 있으면 먼저 확인하고, 설치 결과는 반드시 `F:/mptech/AGENTS.md`, `F:/mptech/harness/`, `F:/mptech/modules/`가 되게 정리합니다.
 
 ### Origin Still Points To The Template
 
@@ -371,10 +385,10 @@ git -C 'F:/mptech' remote -v
 `https://github.com/vibedong/jjamppong-harness.git`가 보이면 project repo로 바꿔야 합니다.
 
 ```powershell
-gh repo create vibedong/mptech --private
-git -C 'F:/mptech' remote set-url origin https://github.com/vibedong/mptech.git
-git -C 'F:/mptech' push -u origin main
+.\scripts\install-jjamppong-harness.ps1 vibedong/jjamppong-harness.git F:mptech -ProjectRepo https://github.com/vibedong/mptech.git -AllowOverwrite
 ```
+
+commit과 push는 이 복구 명령에 포함하지 않습니다. 현재 채팅에서 사용자가 명시 승인한 뒤에만 별도로 실행합니다.
 
 ### Codex Starts Coding Immediately
 

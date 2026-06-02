@@ -22,11 +22,18 @@ Use the required plugin or skill at each stage.
 ```text
 Matt Pocock Planning Gate
   Verify setup-matt-pocock-skills readiness.
-  Use grill-with-docs.
-  Use to-prd.
+  Run Grill Routing And Completion Gate.
+  Use grill-with-docs when existing code/docs/candidate lists/domain docs can sharpen the request.
+  Use grill-me when the request is greenfield or mostly product-intent driven.
+  Ask one user-facing question at a time and wait for the user's answer.
+  Do not ask duplicate user-facing questions for facts already answered by inspected code/docs.
+  Record grill route, inspected evidence, answered questions, deferred unknowns, and remaining decisions in harness/docs/tasks/active/<slug>/grill.md.
+  Run Module Structure Gate before creating or changing product module folders.
+  For non-module work, record Module Structure Gate as not applicable and do not ask module-structure questions.
+  Use to-prd only after the grill gate has resolved or explicitly deferred core uncertainties.
   Stop for User PRD Approval.
   Use to-issues.
-  Stop for User Issue Approval.
+  Stop for User Issue Approval, including issue granularity, dependency order, and HITL/AFK classification.
   Write the task brief.
 
 Superpowers Writing Plans
@@ -76,11 +83,31 @@ Module type and folder standards are not decided ad hoc.
 
 Creating or changing module types and folder standards is itself substantive work and follows the Full Workflow.
 
-Approved results are recorded in:
+The Module Structure Gate runs before any product module folder creation, product module folder change, or product code writing that depends on a module structure.
+
+If the request cannot create or change product module folders or product code, Codex records `Module Structure Gate: not applicable` in `harness/docs/tasks/active/<slug>/grill.md`, does not ask module-structure questions, and continues with the applicable workflow.
+
+If `modules/` is empty, or if `harness/state/module-structure.md` says no project module structure has been approved, Codex must not create product module folders or write product code.
+
+Before product module work starts, Codex must:
+
+1. Use the Grill Routing And Completion Gate to understand the request.
+2. Propose two or three module structure options in plain language.
+3. Recommend one option with reasoning.
+4. Ask the user to approve or revise the module structure.
+5. Record the approved structure in:
 
 ```text
 harness/state/module-structure.md
 ```
+
+The recorded structure must include:
+
+- Project Module Types
+- Folder Set For Each Module Type
+- Active Modules
+- Deferred Modules
+- Extra Folders And Reasons
 
 Codex must not create module folders that conflict with the recorded module structure.
 

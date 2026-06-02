@@ -2,7 +2,7 @@
 
 No project module structure has been approved.
 
-Module types and folder standards must be created through the Full Workflow before product modules are created.
+Module types and folder standards must be approved through the Module Structure Gate in the Full Workflow before product modules are created.
 
 When approved, record:
 

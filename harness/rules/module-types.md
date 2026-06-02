@@ -6,7 +6,9 @@ This harness does not ship fixed module type names.
 
 Each project defines its own module types and folder standards through the Full Workflow.
 
-Module structure design is not a separate workflow stage; it is a substantive task that uses the Full Workflow.
+Module structure design is a substantive planning decision inside the Full Workflow.
+
+It is handled by the Module Structure Gate, not by an ad hoc side flow.
 
 ## When To Use This Rule
 
@@ -27,7 +29,9 @@ They must follow:
 ```text
 Request Intake
 -> setup-matt-pocock-skills Readiness Check
--> grill-with-docs
+-> Grill Routing And Completion Gate
+-> Grill Result Record
+-> Module Structure Gate
 -> to-prd
 -> User PRD Approval
 -> to-issues
@@ -49,6 +53,8 @@ Record approved module type and folder standards in:
 ```text
 harness/state/module-structure.md
 ```
+
+If the request cannot create or change product module folders or product code, record `Module Structure Gate: not applicable` in `harness/docs/tasks/active/<slug>/grill.md` and do not ask module-structure questions.
 
 ## Required Content
 

@@ -33,7 +33,7 @@ If the user says they want to make, start, or build a project, for example "ERP 
 - Unless the user gives a different project slug, derive the project slug from the target folder name. Example: `F:/mptech` uses `mptech`.
 - Create or verify the private project repository, for example `vibedong/mptech`, then set the project harness root `origin` to that project repository and push `main` only after explicit user approval for push.
 - Before reporting setup complete, verify `git remote -v` in the project harness root points to the project repository, not to `vibedong/jjamppong-harness.git`.
-- In the project harness root: record request intake in `harness/state/intake.md`, then run the full mandatory planning gate: setup-matt-pocock-skills readiness check, grill-with-docs, to-prd, User PRD Approval, to-issues, User Issue Approval, task brief, superpowers:writing-plans, and the Mandatory Plan Review Question. Record the choice and results in `harness/docs/tasks/active/<YYYY-MM-DD-short-topic>/reviews.md`; do not implement before that review choice is recorded.
+- In the project harness root: record request intake in `harness/state/intake.md`, then run the full mandatory planning gate: setup-matt-pocock-skills readiness check, Grill Routing And Completion Gate, Grill Result Record, Module Structure Gate when applicable, to-prd, User PRD Approval, to-issues, User Issue Approval, task brief, superpowers:writing-plans, and the Mandatory Plan Review Question. Record the choice and results in `harness/docs/tasks/active/<YYYY-MM-DD-short-topic>/reviews.md`; do not implement before that review choice is recorded.
 - Do not create folders under `modules/` until `harness/state/module-structure.md` approves the module structure.
 
 ## Branch And Commit Control
@@ -50,7 +50,9 @@ If the user says they want to make, start, or build a project, for example "ERP 
 - Use the `vowline` skill for substantive work, including subagents.
 - Use the Codex app progress checklist for substantive work.
 - Explain technical choices in simple language because the user may be non-technical.
-- Use Matt Pocock planning skills for the mandatory planning gate: `setup-matt-pocock-skills`, `grill-with-docs`, `to-prd`, and `to-issues`.
+- Use Matt Pocock planning skills for the mandatory planning gate: `setup-matt-pocock-skills`, `grill-with-docs` or `grill-me` through the Grill Routing And Completion Gate, `to-prd`, and `to-issues`.
+- During planning, choose `grill-with-docs` when existing code, docs, candidate lists, domain glossary, ADRs, or prior implementations can answer or sharpen the request. Choose `grill-me` when the request is greenfield, product-intent driven, or lacks enough existing project evidence. If both apply, use `grill-with-docs` first and `grill-me` only for remaining user-intent uncertainties.
+- A grill session is not complete until core uncertainties are resolved or explicitly deferred. Ask one user-facing question at a time, wait for the user's answer, do not ask duplicate questions already answered by inspected evidence, and record the grill result in `harness/docs/tasks/active/<slug>/grill.md` before moving to PRD, issues, module structure, writing plan, or implementation.
 - Use Superpowers for writing plans, implementation, and verification.
 - Use gstack review skills when running plan review.
 - Use Compound Engineering after verification.
@@ -81,6 +83,8 @@ At the start of a substantive task, read:
 
 - Do not silently skip the Full Workflow.
 - Do not invent module folders outside the approved module structure.
+- If `modules/` is empty or `harness/state/module-structure.md` says no module structure is approved, stop before product module folders or product code. Use the planning gate to propose and approve module structure first, then record it in `harness/state/module-structure.md`.
+- If the request cannot create or change product module folders or product code, record the Module Structure Gate as not applicable and do not ask module-structure questions.
 - Use root `handoff.md` only for global next-chat/context transfer. Task summaries belong under `harness/docs/tasks/active/<YYYY-MM-DD-short-topic>/brief.md`.
 - Do not write product code in the `jjamppong-harness` source/template repository.
 - Do not finish new project setup while the project harness root `origin` still points to `vibedong/jjamppong-harness.git`.
