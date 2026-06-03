@@ -58,6 +58,20 @@ harness/state/module-structure.md
 
 If the request cannot create or change product module folders or product code, record `Module Structure Gate: not applicable` in `harness/docs/tasks/active/<slug>/grill.md` and do not ask module-structure questions.
 
+## Ledger Requirement
+
+Module structure approval must be traceable to the active task gate ledger.
+
+For the task that creates or changes module structure, the task gate ledger must contain `Gate id: module_structure` with `Status: approved` before `harness/state/module-structure.md` is treated as approved.
+
+Future tasks may rely on `harness/state/module-structure.md` as the long-lived module structure record, but they must record one of these task-local entries before product PRD drafting:
+
+- `Gate id: module_structure` with `Status: existing-approved`: existing approved structure applies.
+- `Gate id: module_structure` with `Status: approved`: this task approved a new or changed structure.
+- `Gate id: module_structure` with `Status: not-applicable`: this task cannot create or change product module folders or product code.
+
+The state file records the approved structure. The task ledger records the user response that opened the gate.
+
 ## Required Content
 
 `harness/state/module-structure.md` must record:

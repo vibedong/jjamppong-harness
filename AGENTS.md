@@ -56,6 +56,7 @@ If the user says they want to make, start, or build a project, for example "ERP 
 - Use Superpowers for writing plans, implementation, and verification.
 - Use gstack review skills when running plan review.
 - Use Compound Engineering after verification.
+- Ask user-facing questions and confirmations in the user's language. If the user writes in Korean, ask gate questions in Korean and explain technical labels in plain language.
 
 ## Optional Maintenance Tools
 
@@ -92,3 +93,6 @@ At the start of a substantive task, read:
 - Do not finish new project setup while the project harness root `origin` still points to `vibedong/jjamppong-harness.git`.
 - Do not commit or push without explicit user approval in the current chat.
 - Do not change live harness rules directly from a new idea; use `proposals/` first.
+- Before opening any workflow gate, run the Gate Response Test from `harness/rules/workflow.md`: the user's response must clearly answer the immediately preceding explicit gate question, the approved scope must match that question, unresolved conditions must be handled, and the task `gate-ledger.md` must record the result. If the test does not pass, keep the gate locked and ask a narrower confirmation question.
+- Gate approvals are task-local. Record them in `harness/docs/tasks/active/<slug>/gate-ledger.md`; do not use a global ledger as the source of truth for a task.
+- Short or general affirmations approve only the immediately preceding explicit gate question and only the named scope in that question. They do not approve later stages, deferred unknowns, implementation, subagent write work, commit, push, PR, merge, or release.

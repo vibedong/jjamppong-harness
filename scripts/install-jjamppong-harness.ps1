@@ -364,10 +364,56 @@ function Restore-TargetTaskArtifacts {
   }
 }
 
+function Backup-TargetState {
+  param(
+    [string]$Target,
+    [string]$BackupRoot
+  )
+
+  $stateDir = Join-Path $Target 'harness/state'
+  if (-not (Test-Path -LiteralPath $stateDir)) {
+    return
+  }
+
+  $resolvedTarget = (Resolve-Path -LiteralPath $Target).Path
+  $resolvedStateDir = (Resolve-Path -LiteralPath $stateDir).Path
+  $expectedPrefix = $resolvedTarget + [IO.Path]::DirectorySeparatorChar
+  if (-not $resolvedStateDir.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to back up state outside target root: $resolvedStateDir"
+  }
+
+  New-Item -ItemType Directory -Path $BackupRoot -Force | Out-Null
+  Copy-Item -LiteralPath $resolvedStateDir -Destination $BackupRoot -Recurse -Force
+}
+
+function Restore-TargetState {
+  param(
+    [string]$Target,
+    [string]$BackupRoot
+  )
+
+  $backupState = Join-Path $BackupRoot 'state'
+  if (-not (Test-Path -LiteralPath $backupState)) {
+    return
+  }
+
+  $resolvedTarget = (Resolve-Path -LiteralPath $Target).Path
+  $stateDir = Join-Path $resolvedTarget 'harness/state'
+  $resolvedStateDir = (Resolve-Path -LiteralPath $stateDir).Path
+  $expectedPrefix = $resolvedTarget + [IO.Path]::DirectorySeparatorChar
+  if (-not $resolvedStateDir.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to restore state outside target root: $resolvedStateDir"
+  }
+
+  Remove-Item -LiteralPath $resolvedStateDir -Recurse -Force
+  Copy-Item -LiteralPath $backupState -Destination (Join-Path $resolvedTarget 'harness') -Recurse -Force
+}
+
 function Verify-Install {
   param(
     [string]$Target,
-    [string]$Template
+    [string]$Template,
+    [bool]$HadExistingHarnessState = $false
   )
 
   foreach ($required in @('AGENTS.md', 'README.md', 'CONTEXT.md', 'handoff.md', 'harness', 'modules', 'module-template', 'proposals')) {
@@ -379,10 +425,18 @@ function Verify-Install {
   $requiredTextChecks = @(
     @{ Path = 'AGENTS.md'; Pattern = 'harness/state/module-structure.md' },
     @{ Path = 'AGENTS.md'; Pattern = 'stop before `to-prd`, `to-issues`, `writing-plan`, module folders, or product code' },
+    @{ Path = 'AGENTS.md'; Pattern = 'Gate Response Test' },
     @{ Path = 'harness/rules/workflow.md'; Pattern = 'Grill Routing And Completion Gate' },
     @{ Path = 'harness/rules/workflow.md'; Pattern = 'Module Structure Gate' },
     @{ Path = 'harness/rules/workflow.md'; Pattern = 'before `to-prd`, `to-issues`, `writing-plan`' },
-    @{ Path = 'harness/rules/rules.md'; Pattern = 'must not run product `to-prd`, product `to-issues`, product `writing-plan`' }
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'Gate Response Test' },
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'Gate Question Format' },
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'gate-ledger.md' },
+    @{ Path = 'harness/rules/workflow.md'; Pattern = 'Gate id' },
+    @{ Path = 'harness/rules/rules.md'; Pattern = 'must not run product `to-prd`, product `to-issues`, product `writing-plan`' },
+    @{ Path = 'harness/rules/rules.md'; Pattern = 'No Inferred Gate Approval' },
+    @{ Path = 'harness/rules/rules.md'; Pattern = 'No Implicit Deferrals' },
+    @{ Path = 'harness/rules/rules.md'; Pattern = 'Stage Unlocks Require Ledger Evidence' }
   )
 
   foreach ($check in $requiredTextChecks) {
@@ -390,6 +444,23 @@ function Verify-Install {
     $content = Get-Content -LiteralPath $path -Raw
     if (-not $content.Contains($check.Pattern)) {
       throw "Installed harness is missing required gate text in $($check.Path): $($check.Pattern)"
+    }
+  }
+
+  if (-not $HadExistingHarnessState) {
+    $neutralStateChecks = @(
+      @{ Path = 'harness/state/intake.md'; Pattern = 'No active request has been recorded for this project yet.' },
+      @{ Path = 'harness/state/planning.md'; Pattern = 'No active task is in progress.' },
+      @{ Path = 'harness/state/compound.md'; Pattern = 'No reusable learning has been captured for this project yet.' },
+      @{ Path = 'harness/state/module-structure.md'; Pattern = 'No project module structure has been approved.' }
+    )
+
+    foreach ($check in $neutralStateChecks) {
+      $path = Join-Path $Target $check.Path
+      $content = Get-Content -LiteralPath $path -Raw
+      if (-not $content.Contains($check.Pattern)) {
+        throw "Installed harness state is not neutral in $($check.Path): $($check.Pattern)"
+      }
     }
   }
 
@@ -446,7 +517,9 @@ $tempRoot = Join-Path $tempBase ('jjamppong-harness-' + [guid]::NewGuid().ToStri
 $sourceRoot = $null
 $createdTempClone = $false
 $taskArtifactBackupRoot = Join-Path $tempBase ('jjamppong-task-artifacts-' + [guid]::NewGuid().ToString('N'))
+$stateBackupRoot = Join-Path $tempBase ('jjamppong-state-' + [guid]::NewGuid().ToString('N'))
 $hadTargetTaskArtifacts = $false
+$hadExistingHarnessState = $false
 $installCompleted = $false
 
 try {
@@ -463,13 +536,20 @@ try {
   }
 
   $hadTargetTaskArtifacts = Test-Path -LiteralPath (Join-Path $target 'harness/docs/tasks')
+  $hadExistingHarnessState = Test-Path -LiteralPath (Join-Path $target 'harness/state')
   if ($hadTargetTaskArtifacts) {
     Backup-TargetTaskArtifacts -Target $target -BackupRoot $taskArtifactBackupRoot
+  }
+  if ($hadExistingHarnessState) {
+    Backup-TargetState -Target $target -BackupRoot $stateBackupRoot
   }
   Copy-TemplateRoot -Source $sourceRoot -Target $target -Overwrite:$AllowOverwrite
   Clear-InstalledTaskArtifacts -Target $target
   if ($hadTargetTaskArtifacts) {
     Restore-TargetTaskArtifacts -Target $target -BackupRoot $taskArtifactBackupRoot
+  }
+  if ($hadExistingHarnessState) {
+    Restore-TargetState -Target $target -BackupRoot $stateBackupRoot
   }
   Set-ProjectOrigin -Target $target -Template $normalizedTemplate -Project $projectRepoUrl
   $installedOrigin = git -C $target remote get-url origin
@@ -479,7 +559,7 @@ try {
   if (-not $hasExistingProjectOrigin) {
     Ensure-GitHubRepo -RepoUrl $installedOrigin -Skip:$SkipGitHubRepo
   }
-  Verify-Install -Target $target -Template $normalizedTemplate
+  Verify-Install -Target $target -Template $normalizedTemplate -HadExistingHarnessState $hadExistingHarnessState
   $installCompleted = $true
 }
 finally {
@@ -502,6 +582,19 @@ finally {
     }
     else {
       Write-Output "Preserved task artifact backup after failed install: $resolvedBackup"
+    }
+  }
+  if (Test-Path -LiteralPath $stateBackupRoot) {
+    $resolvedStateBackup = (Resolve-Path -LiteralPath $stateBackupRoot).Path
+    $expectedPrefix = $tempBase + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedStateBackup.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase) -or -not (Split-Path -Leaf $resolvedStateBackup).StartsWith('jjamppong-state-')) {
+      throw "Refusing to remove unexpected state backup: $resolvedStateBackup"
+    }
+    if ($installCompleted) {
+      Remove-Item -LiteralPath $resolvedStateBackup -Recurse -Force
+    }
+    else {
+      Write-Output "Preserved state backup after failed install: $resolvedStateBackup"
     }
   }
 }

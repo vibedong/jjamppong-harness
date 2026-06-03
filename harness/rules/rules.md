@@ -77,7 +77,77 @@ harness/docs/tasks/active/<slug>/reviews.md
 
 Do not implement before this question is answered.
 
-## 4. Module Structure Is Not Invented Inline
+## 4. No Inferred Gate Approval
+
+Do not open a workflow gate by implication.
+
+A gate opens only when the user's response clearly answers the immediately preceding explicit gate question. Recommendations, summaries, silence, topic changes, adjacent technical discussion, or artifact existence do not approve a gate.
+
+If the response is ambiguous, choose the narrower interpretation and keep later stages locked.
+
+## 5. No Implicit Deferrals
+
+Unknowns are blockers unless resolved or explicitly deferred.
+
+An unknown may be marked deferred only when the user explicitly defers that named unknown. A general direction approval, module structure approval, PRD approval, issue approval, or plan approval does not approve deferred unknowns.
+
+Each deferred unknown must record:
+
+- Unknown
+- User quote approving deferral
+- Why it is non-blocking now
+- Revisit stage
+
+## 6. Stage Unlocks Require Ledger Evidence
+
+Before entering a stage, verify the task gate ledger contains the matching approval entry:
+
+| Stage | Required task-local ledger entry |
+| --- | --- |
+| product/module PRD drafting | `Gate id: module_structure` and `Status: approved` or `Status: existing-approved` |
+| non-product/non-module PRD drafting | `Gate id: module_structure` and `Status: not-applicable` |
+| issue decomposition | `Gate id: prd` and `Status: approved` |
+| task brief and writing-plan | `Gate id: issues` and `Status: approved` |
+| implementation | `Gate id: plan_review` and `Status: completed` |
+
+No matching ledger entry means the stage is still locked.
+
+## 7. Planning Write Boundary
+
+Before `Gate id: plan_review` with `Status: completed` is recorded, writes are limited to planning, state, review, and verification artifacts allowed by the current stage.
+
+Allowed before implementation:
+
+- Intake/Grill: `harness/state/intake.md`, task `grill.md`, task `gate-ledger.md`, and evidence notes.
+- Module Structure Gate: `harness/state/module-structure.md`, task `gate-ledger.md`, and module-structure proposal notes.
+- PRD drafting: task `prd.md` and task `gate-ledger.md`.
+- Issue drafting: task `issues/*.md` and task `gate-ledger.md`.
+- Writing Plan: task `brief.md`, `writing-plan.md`, `reviews.md`, and task `gate-ledger.md`.
+
+Forbidden before implementation:
+
+- product code changes
+- product module implementation files
+- out-of-plan file edits
+- git commit, push, PR, merge, or release
+
+Module folders may be created only after the relevant module structure gate is approved. Product code inside those folders remains locked until `Gate id: implementation` with `Status: approved` is recorded.
+
+## 8. Skill Evidence Is Required
+
+Do not treat PRD, issue, or writing-plan artifacts as complete unless they record the skill used, source artifact, upstream gate ledger entries, required skill-specific confirmation evidence, and next locked gate.
+
+Required confirmations:
+
+- `setup-matt-pocock-skills`: issue tracker decision, triage label vocabulary decision, domain docs layout decision, and user confirmation quote.
+- `grill-with-docs` or `grill-me`: evidence inspected, questions answered from repo/docs, questions asked to the user, user answers, unresolved unknowns, and explicit deferred unknown decisions.
+- `to-prd`: seam confirmation gate and user quote.
+- `to-issues`: issue breakdown approval gate and user quote, including dependency and HITL/AFK validation.
+- `superpowers:writing-plans`: source issues, upstream gates, and next locked gate.
+
+Do not publish external GitHub issues, PRD issues, pull requests, or releases unless the current gate ledger and the user explicitly approve that publication.
+
+## 9. Module Structure Is Not Invented Inline
 
 Module type and folder standards are not decided ad hoc.
 
@@ -94,8 +164,9 @@ Before product module work starts, Codex must:
 1. Use the Grill Routing And Completion Gate to understand the request.
 2. Propose two or three module structure options in plain language.
 3. Recommend one option with reasoning.
-4. Ask the user to approve or revise the module structure.
-5. Record the approved structure in:
+4. Ask the user to approve or revise the module structure using the Gate Question Format.
+5. Record `Gate id: module_structure` with `Status: approved` in the active task `gate-ledger.md`.
+6. Record the approved structure in:
 
 ```text
 harness/state/module-structure.md
@@ -111,13 +182,13 @@ The recorded structure must include:
 
 Codex must not create module folders that conflict with the recorded module structure.
 
-## 5. Progress Display Uses The Codex App
+## 10. Progress Display Uses The Codex App
 
 For substantive work, maintain the Codex app progress checklist.
 
 Do not create `harness/state/progress.md`.
 
-## 6. State Paths Are Fixed
+## 11. State Paths Are Fixed
 
 Use these paths:
 
@@ -135,7 +206,7 @@ CONTEXT.md
 handoff.md
 ```
 
-## 7. Proposals Protect Live Rules
+## 12. Proposals Protect Live Rules
 
 New harness rule changes first go into `proposals/`.
 
@@ -145,19 +216,23 @@ Do not keep approved proposal files as archive.
 
 After `ce-compound`, use the exact Learning Update Question in `harness/rules/workflow.md`. Do not change live rules until a proposal is approved.
 
-## 8. Handoff Is Conditional
+## 13. Handoff Is Conditional
 
 Do not automatically update `handoff.md`.
 
 Update it only when the user explicitly asks for next-chat handoff.
 
-## 9. Explain Simply
+## 14. Explain Simply
 
 The user may be non-technical.
 
-Ask deep questions in simple language. When recommending Python, TypeScript, tests, Git, worktrees, or GitHub, explain why in plain language.
+Use the user's language for user-facing questions and confirmations. If the user writes in Korean, ask gate questions in Korean.
 
-## 10. Git Branch And Commit Control
+When a decision requires technical terms, explain them in plain language before asking for approval. Keep the explanation short enough that a non-developer can decide what is being approved.
+
+Do not hide the actual gate scope behind developer labels. Developer labels such as `Gate id`, `Status`, `PRD`, `issue`, `module`, `branch`, `commit`, and `push` may be shown, but they must be paired with a simple explanation of what changes for the user.
+
+## 15. Git Branch And Commit Control
 
 Substantive project work must not happen directly on `main` after project setup is complete.
 

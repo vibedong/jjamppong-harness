@@ -1,13 +1,7 @@
 # Compound State
 
-No ce-compound learning has been captured for `2026-06-02-agents-md-management` yet.
+No reusable learning has been captured for this project yet.
 
-Blocker: no `ce-compound` execution tool or local skill is available in the current Codex tool surface, so no reusable learning was invented.
+Reusable learning belongs under `harness/docs/solutions/`.
 
-This file stores only a short index of Compound Engineering learning documents.
-
-Long-lived learning documents stay under:
-
-```text
-harness/docs/solutions/
-```
+This file stores only a short index of reusable learning documents.
