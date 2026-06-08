@@ -1,0 +1,10 @@
+task_id: "{{task_id}}"
+task_type: "{{task_type}}"
+status: active
+current_gate: intake
+canonical_event_log: events.jsonl
+human_projection: gate-ledger.md
+cache_projection: task.yaml
+planning_pack: planning-pack.md
+created_at: "{{created_at}}"
+updated_at: "{{updated_at}}"

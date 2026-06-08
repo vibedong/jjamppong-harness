@@ -2,97 +2,71 @@
 
 ## Scope
 
-This repository uses 짬뽕하네스 (`jjamppong-harness`), a private agent workflow harness.
+This repository uses Jjamppong Harness, an AI work safety harness.
 
-## Harness Root Model
-
-- The directory containing this `AGENTS.md` is the harness root.
-- When installing the harness into a project folder such as `F:/mptech`, `AGENTS.md`, `harness/`, `modules/`, `module-template/`, and `proposals/` must live directly under `F:/mptech`. AI task artifacts live under `harness/docs/`; the project-root artifact area must not be used for AI task output.
-- Do not create a nested `F:/mptech/jjamppong-harness/` folder unless the user explicitly wants to maintain a separate copy of the template source. Treat legacy nested `F:/mptech/ourosuper-harness/` the same way.
-- Product or application work lives under `modules/` only after the Full Workflow has approved the relevant module structure.
-- A template-maintenance checkout of `vibedong/jjamppong-harness` is for updating the reusable harness template. Do not create product or application code there.
-- A project harness root must not keep `origin` pointed at `https://github.com/vibedong/jjamppong-harness.git`. That remote is only for the template-maintenance checkout.
-- If the repository role is unclear, stop and ask the user before writing product code, changing `modules/`, or starting request intake.
-
-## New Project Request Trigger
-
-If the user says they want to make, start, or build a project, for example "ERP 프로젝트 만들고 싶어", first decide whether the current directory is the intended harness root or the template-maintenance checkout.
-
-- Treat shorthand install requests in the form `<template-repo-or-url> <target-path>에 설치해줘` as a request to install this template into the target project root. The repo/url token is the template source; the path-like token is the target harness root.
-- For shorthand install requests, prefer the reusable installer `scripts/install-jjamppong-harness.ps1` from this template source. Do not satisfy the request with a direct clone into the target path.
-- This harness is installed as a project bootstrap/template, not as a package dependency. The target folder becomes the real project root.
-- Normalize Windows drive shorthand before writing. A token shaped like `<drive>:<folder>` means `<drive>:/<folder>` for this harness install flow. Say the normalized target path before making changes.
-- Never satisfy shorthand install by leaving files under a nested folder named after the template repository, such as `<target-root>/jjamppong-harness/` or `<target-root>/ourosuper-harness/`.
-- If the target path is missing, ambiguous, or not a Windows/local path, ask one concise clarification before writing.
-- If the target path exists and is non-empty, inspect top-level collisions first. Do not overwrite `README.md`, `AGENTS.md`, `harness/`, `modules/`, `module-template/`, or `proposals/` without explicit user approval.
-- If the target path is already a git repository, preserve its `origin`; copy template contents excluding `.git/`.
-- If the target path is empty or not a git repository, create or use a project repository named from the target folder, for example `<target-root>` -> `<owner>/<target-folder-name>`, and make the target path the project repository root. Do not leave `origin` pointing at the template source.
-- For a new project folder: create or clone the private project repository so the harness files land directly under the target folder, for example `F:/mptech/AGENTS.md`, not `F:/mptech/jjamppong-harness/AGENTS.md`.
-- If the user names `vibedong/jjamppong-harness.git` as the install source, treat it as a template source, not as the final project remote.
-- If the target root `origin` points at `vibedong/jjamppong-harness.git` after installation, treat the install as incomplete. Replace it with the project repository origin derived from the target folder or the user-provided project repo before starting product work.
-- Unless the user gives a different project slug, derive the project slug from the target folder name. Example: `F:/mptech` uses `mptech`.
-- Create or verify the private project repository, for example `vibedong/mptech`, then set the project harness root `origin` to that project repository and push `main` only after explicit user approval for push.
-- Before reporting setup complete, verify `git remote -v` in the project harness root points to the project repository, not to `vibedong/jjamppong-harness.git`.
-- In the project harness root: record request intake in `harness/state/intake.md`, then run the full mandatory planning gate: setup-matt-pocock-skills readiness check, Grill Routing And Completion Gate, Grill Result Record, Module Structure Gate when applicable, to-prd, User PRD Approval, to-issues, User Issue Approval, task brief, superpowers:writing-plans, and the Mandatory Plan Review Question. Record the choice and results in `harness/docs/tasks/active/<YYYY-MM-DD-short-topic>/reviews.md`; do not implement before that review choice is recorded.
-- Do not create folders under `modules/` until `harness/state/module-structure.md` approves the module structure.
-
-## Branch And Commit Control
-
-- For substantive work in a project harness root, create or switch to a task branch before the first file edit unless the user explicitly says to work on the current branch.
-- Use a short ASCII branch name derived from the task, for example `task/g2b-lighting-daily-lookup`.
-- Do not create product, module, or workflow changes directly on `main` after project setup is complete.
-- Do not run `git commit`, `git push`, `gh pr create`, merge, or release commands unless the user explicitly approves that exact action in the current chat.
-- Before asking for commit or push approval, show the changed files and a short summary of what will be committed or pushed.
-- If the work stops before approval, leave changes uncommitted and report the branch name and `git status --short`.
-
-## Always Use
-
-- Use the `vowline` skill for substantive work, including subagents.
-- Use the Codex app progress checklist for substantive work.
-- Explain technical choices in simple language because the user may be non-technical.
-- Use Matt Pocock planning skills for the mandatory planning gate: `setup-matt-pocock-skills`, `grill-with-docs` or `grill-me` through the Grill Routing And Completion Gate, `to-prd`, and `to-issues`.
-- During planning, choose `grill-with-docs` when existing code, docs, candidate lists, domain glossary, ADRs, or prior implementations can answer or sharpen the request. Choose `grill-me` when the request is greenfield, product-intent driven, or lacks enough existing project evidence. If both apply, use `grill-with-docs` first and `grill-me` only for remaining user-intent uncertainties.
-- A grill session is not complete until core uncertainties are resolved or explicitly deferred. Ask one user-facing question at a time, wait for the user's answer, do not ask duplicate questions already answered by inspected evidence, and record the grill result in `harness/docs/tasks/active/<slug>/grill.md` before moving to PRD, issues, module structure, writing plan, or implementation.
-- Use Superpowers for writing plans, implementation, and verification.
-- Use gstack review skills when running plan review.
-- Use Compound Engineering after verification.
-- Ask user-facing questions and confirmations in the user's language. If the user writes in Korean, ask gate questions in Korean and explain technical labels in plain language.
-
-## Optional Maintenance Tools
-
-- Use `agents-md-chain-audit` when Codex instruction discovery looks wrong or an `AGENTS.override.md` file may be shadowing another instruction file.
-- Use `agents-md-improver` before broad rewrites of `AGENTS.md` or `AGENTS.override.md`.
-- Use `revise-agents-md` only for reusable learnings that should survive future sessions.
-- These tools are optional maintenance aids, not mandatory steps in the Full Workflow.
+The directory containing this file is the harness root.
 
 ## Required Reads
 
-At the start of a substantive task, read:
+For any substantive task, read these first:
 
-1. `harness/rules/workflow.md`
-2. `harness/rules/rules.md`
-3. `harness/state/module-structure.md`
+```text
+harness/contracts/gate-contract-matrix.yaml
+harness/contracts/capability-catalog.yaml
+harness/contracts/task.schema.yaml
+harness/contracts/permission-decision.schema.yaml
+harness/rules/workflow.md
+harness/rules/rules.md
+harness/state/planning.md
+active task events.jsonl, if one exists
+active task task.yaml, if one exists
+```
 
-## Conditional Reads
+If required files are missing, stale, or contradictory, stop and run verify/doctor.
 
-- Read `handoff.md` only when the user asks to continue from a previous chat, asks for handoff, or says the work should be prepared for a new chat.
-- Read `harness/rules/module-types.md` when creating or changing module types, module folders, or module structure.
-- Read `README.md` when explaining the harness to a person or updating repository documentation.
-- Read `proposals/` only when the user asks to review, create, approve, or reflect a pending harness change.
-- Search `harness/docs/solutions/` only when a related prior solution may help, when running Compound Engineering refresh work, or when `ce-compound` needs existing learning context.
+## Permission Source Of Truth
+
+Permission is granted only by:
+
+```text
+harness/contracts/*.yaml
+active task events.jsonl
+PermissionDecision result
+```
+
+`gate-ledger.md` is a human-readable projection.
+
+`task.yaml` is a derived cache.
+
+This file may restrict behavior further, but it must not grant permission beyond contracts and canonical events.
 
 ## Hard Rules
 
-- Do not silently skip the Full Workflow.
-- Do not invent module folders outside the approved module structure.
-- If `modules/` is empty or `harness/state/module-structure.md` says no module structure is approved, stop before product module folders or product code. Use the planning gate to propose and approve module structure first, then record it in `harness/state/module-structure.md`.
-- If a user asks to build a product feature and no module structure is approved, stop before `to-prd`, `to-issues`, `writing-plan`, module folders, or product code. First run the Module Structure Gate and ask the user to approve or revise the project module structure.
-- If the request cannot create or change product module folders or product code, record the Module Structure Gate as not applicable and do not ask module-structure questions.
-- Use root `handoff.md` only for global next-chat/context transfer. Task summaries belong under `harness/docs/tasks/active/<YYYY-MM-DD-short-topic>/brief.md`.
-- Do not write product code in the `jjamppong-harness` source/template repository.
-- Do not finish new project setup while the project harness root `origin` still points to `vibedong/jjamppong-harness.git`.
-- Do not commit or push without explicit user approval in the current chat.
-- Do not change live harness rules directly from a new idea; use `proposals/` first.
-- Before opening any workflow gate, run the Gate Response Test from `harness/rules/workflow.md`: the user's response must clearly answer the immediately preceding explicit gate question, the approved scope must match that question, unresolved conditions must be handled, and the task `gate-ledger.md` must record the result. If the test does not pass, keep the gate locked and ask a narrower confirmation question.
-- Gate approvals are task-local. Record them in `harness/docs/tasks/active/<slug>/gate-ledger.md`; do not use a global ledger as the source of truth for a task.
-- Short or general affirmations approve only the immediately preceding explicit gate question and only the named scope in that question. They do not approve later stages, deferred unknowns, implementation, subagent write work, commit, push, PR, merge, or release.
+- Use `vowline` for substantive work, including subagents.
+- Do not start with README or AGENTS rewrites before contracts/tests/verify are in place.
+- Install requests stop after install and verify. Do not continue into planning.
+- Product planning starts with `grill` before project file reads.
+- `research` comes after `grill`; web research is not live target access.
+- `plan_review completed` never unlocks implementation.
+- `module_structure` never creates folders.
+- `folder_skeleton` never creates code, tests, fixtures, runtime config, package files, live access, commit, or push.
+- Short approvals approve only the immediately preceding explicit gate question and named scope.
+- Missing or ambiguous capabilities are denied.
+- Product code belongs under `modules/` unless exact `file.write.outside_modules` approval exists.
+- Secrets are deny-by-default.
+- Package install, live target access, commit, and push each need separate explicit capability approval.
+- Harness-core changes in product tasks must become proposals, not live edits.
+- Doctor/update/repair are proposal-only by default for modified managed files.
+- Root `handoff.md` changes only when the user asks for handoff.
+
+## User Language
+
+Ask user-facing gate questions in the user's language.
+
+If the user writes Korean, ask in Korean and explain technical labels briefly in plain language.
+
+## Git
+
+Do not run `git commit`, `git push`, PR, merge, tag, or release commands unless the user explicitly approves that exact action in the current chat.
+
+Before asking for git approval, show changed files and the exact operation.

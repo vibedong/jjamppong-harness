@@ -1,272 +1,188 @@
 # Harness Rules
 
-## 1. Full Workflow Is The Default
+This file is a projection of FINAL-PLAN and the machine-readable contracts.
 
-All substantive work follows the Full Workflow in `harness/rules/workflow.md`.
-
-Examples of substantive work:
-
-- New project setup
-- New feature
-- New module
-- Module type or folder standard changes
-- Project structure changes
-- Harness rule changes
-- Important technical choices
-- User workflow changes
-
-## 2. Required Plugins And Skills
-
-Use the required plugin or skill at each stage.
+The permission source of truth is:
 
 ```text
-Matt Pocock Planning Gate
-  Verify setup-matt-pocock-skills readiness.
-  Run Grill Routing And Completion Gate.
-  Use grill-with-docs when existing code/docs/candidate lists/domain docs can sharpen the request.
-  Use grill-me when the request is greenfield or mostly product-intent driven.
-  Ask one user-facing question at a time and wait for the user's answer.
-  Do not ask duplicate user-facing questions for facts already answered by inspected code/docs.
-  Record grill route, inspected evidence, answered questions, deferred unknowns, and remaining decisions in harness/docs/tasks/active/<slug>/grill.md.
-  Run Module Structure Gate before product PRD, issue decomposition, writing plans, product module folders, or product code when no module structure is approved.
-  For non-module work, record Module Structure Gate as not applicable and do not ask module-structure questions.
-  Use to-prd only after the grill gate has resolved or explicitly deferred core uncertainties.
-  Stop for User PRD Approval.
-  Use to-issues.
-  Stop for User Issue Approval, including issue granularity, dependency order, and HITL/AFK classification.
-  Write the task brief.
-
-Superpowers Writing Plans
-  Use superpowers:writing-plans.
-  Store the plan at harness/docs/tasks/active/<slug>/writing-plan.md.
-
-gstack Review
-  Use plan-ceo-review and plan-eng-review for normal Mandatory Plan Review.
-  Add a Plan Compliance reviewer for harness rules, workflow, installation, or artifact topology changes.
-  Store selected option, reviewers, findings, user decisions, and skipped reason in harness/docs/tasks/active/<slug>/reviews.md.
-
-Implementation / Apply
-  If the worktree already has uncommitted safety-rule edits, continue sequentially in the current worktree for this plan.
-  Use superpowers:using-git-worktrees first only when the current worktree is clean or the plan baseline has been revised after user-approved protection/isolation.
-  Use superpowers:subagent-driven-development by default.
-  Use superpowers:executing-plans only when subagents are not available or the user asks for a separate execution session.
-  Use superpowers:test-driven-development for features, bug fixes, behavior changes, and refactoring.
-  Use superpowers:systematic-debugging before fixing bugs, failing tests, build failures, or unexpected behavior.
-  Use superpowers:requesting-code-review for major work and review checkpoints.
-
-Verification
-  Use superpowers:verification-before-completion before claiming completion.
-  Store verification at harness/docs/tasks/active/<slug>/verification.md.
-
-Compound Engineering
-  Use ce-compound after verification.
-  Store reusable learning under harness/docs/solutions/.
+1. FINAL-PLAN.md in the build pack, while rebuilding this template
+2. harness/contracts/*.yaml
+3. active task events.jsonl
+4. PermissionDecision output
 ```
 
-If a required plugin or skill is unavailable, stop and tell the user. Do not silently replace it with an informal flow.
+`AGENTS.md`, this file, `workflow.md`, `gate-ledger.md`, and `task.yaml` may restrict behavior further, but they must not grant permission beyond the contracts and canonical events.
 
-## 3. Plan Review Question Is Mandatory
+## Hard Defaults
 
-After `superpowers:writing-plans`, use the exact Mandatory Plan Review Question in `harness/rules/workflow.md`.
+- Missing capability: deny.
+- Ambiguous scope: deny.
+- Short approval expansion: deny.
+- Secrets: deny.
+- Live target access: deny until explicit capability approval.
+- Package install: deny until explicit capability approval.
+- Git commit/push: deny until separate git approvals.
+- Harness-core writes in product tasks: deny; create proposal instead.
+- Parallel active write: deny until explicit parallel approval.
 
-Store review choice, reviewer names, findings, user decisions, and skipped-review reasons in:
+## Required Reads For Substantive Work
 
-```text
-harness/docs/tasks/active/<slug>/reviews.md
-```
-
-Do not implement before this question is answered.
-
-## 4. No Inferred Gate Approval
-
-Do not open a workflow gate by implication.
-
-A gate opens only when the user's response clearly answers the immediately preceding explicit gate question. Recommendations, summaries, silence, topic changes, adjacent technical discussion, or artifact existence do not approve a gate.
-
-If the response is ambiguous, choose the narrower interpretation and keep later stages locked.
-
-## 5. No Implicit Deferrals
-
-Unknowns are blockers unless resolved or explicitly deferred.
-
-An unknown may be marked deferred only when the user explicitly defers that named unknown. A general direction approval, module structure approval, PRD approval, issue approval, or plan approval does not approve deferred unknowns.
-
-Each deferred unknown must record:
-
-- Unknown
-- User quote approving deferral
-- Why it is non-blocking now
-- Revisit stage
-
-## 6. Stage Unlocks Require Ledger Evidence
-
-Before entering a stage, verify the task gate ledger contains the matching approval entry:
-
-| Stage | Required task-local ledger entry |
-| --- | --- |
-| product/module PRD drafting | `Gate id: module_structure` and `Status: approved` or `Status: existing-approved` |
-| non-product/non-module PRD drafting | `Gate id: module_structure` and `Status: not-applicable` |
-| issue decomposition | `Gate id: prd` and `Status: approved` |
-| task brief and writing-plan | `Gate id: issues` and `Status: approved` |
-| implementation | `Gate id: plan_review` and `Status: completed` |
-
-No matching ledger entry means the stage is still locked.
-
-## 7. Planning Write Boundary
-
-Before `Gate id: plan_review` with `Status: completed` is recorded, writes are limited to planning, state, review, and verification artifacts allowed by the current stage.
-
-Allowed before implementation:
-
-- Intake/Grill: `harness/state/intake.md`, task `grill.md`, task `gate-ledger.md`, and evidence notes.
-- Module Structure Gate: `harness/state/module-structure.md`, task `gate-ledger.md`, and module-structure proposal notes.
-- PRD drafting: task `prd.md` and task `gate-ledger.md`.
-- Issue drafting: task `issues/*.md` and task `gate-ledger.md`.
-- Writing Plan: task `brief.md`, `writing-plan.md`, `reviews.md`, and task `gate-ledger.md`.
-
-Forbidden before implementation:
-
-- product code changes
-- product module implementation files
-- out-of-plan file edits
-- git commit, push, PR, merge, or release
-
-Module folders may be created only after the relevant module structure gate is approved. Product code inside those folders remains locked until `Gate id: implementation` with `Status: approved` is recorded.
-
-## 8. Skill Evidence Is Required
-
-Do not treat PRD, issue, or writing-plan artifacts as complete unless they record the skill used, source artifact, upstream gate ledger entries, required skill-specific confirmation evidence, and next locked gate.
-
-Required confirmations:
-
-- `setup-matt-pocock-skills`: issue tracker decision, triage label vocabulary decision, domain docs layout decision, and user confirmation quote.
-- `grill-with-docs` or `grill-me`: evidence inspected, questions answered from repo/docs, questions asked to the user, user answers, unresolved unknowns, and explicit deferred unknown decisions.
-- `to-prd`: seam confirmation gate and user quote.
-- `to-issues`: issue breakdown approval gate and user quote, including dependency and HITL/AFK validation.
-- `superpowers:writing-plans`: source issues, upstream gates, and next locked gate.
-
-Do not publish external GitHub issues, PRD issues, pull requests, or releases unless the current gate ledger and the user explicitly approve that publication.
-
-## 9. Module Structure Is Not Invented Inline
-
-Module type and folder standards are not decided ad hoc.
-
-Creating or changing module types and folder standards is itself substantive work and follows the Full Workflow.
-
-The Module Structure Gate runs before `to-prd`, `to-issues`, `writing-plan`, product module folder creation, product module folder changes, or product code writing when the project has no approved module structure.
-
-If the request cannot create or change product module folders or product code, Codex records `Module Structure Gate: not applicable` in `harness/docs/tasks/active/<slug>/grill.md`, does not ask module-structure questions, and continues with the applicable workflow.
-
-If `modules/` is empty, or if `harness/state/module-structure.md` says no project module structure has been approved, Codex must not run product `to-prd`, product `to-issues`, product `writing-plan`, create product module folders, or write product code.
-
-Before product module work starts, Codex must:
-
-1. Use the Grill Routing And Completion Gate to understand the request.
-2. Propose two or three module structure options in plain language.
-3. Recommend one option with reasoning.
-4. Ask the user to approve or revise the module structure using the Gate Question Format.
-5. Record `Gate id: module_structure` with `Status: approved` in the active task `gate-ledger.md`.
-6. Record the approved structure in:
+Read these before any substantive write:
 
 ```text
-harness/state/module-structure.md
-```
-
-The recorded structure must include:
-
-- Project Module Types
-- Folder Set For Each Module Type
-- Active Modules
-- Deferred Modules
-- Extra Folders And Reasons
-
-Codex must not create module folders that conflict with the recorded module structure.
-
-## 10. Progress Display Uses The Codex App
-
-For substantive work, maintain the Codex app progress checklist.
-
-Do not create `harness/state/progress.md`.
-
-## 11. State Paths Are Fixed
-
-Use these paths:
-
-```text
-harness/state/intake.md
+harness/contracts/gate-contract-matrix.yaml
+harness/contracts/capability-catalog.yaml
+harness/contracts/task.schema.yaml
+harness/contracts/permission-decision.schema.yaml
+harness/rules/workflow.md
 harness/state/planning.md
-harness/state/module-structure.md
-harness/state/compound.md
-harness/docs/agents/
-harness/docs/adr/
-harness/docs/solutions/
-harness/docs/tasks/active/
-harness/docs/tasks/archive/
-CONTEXT.md
-handoff.md
+active task events.jsonl, if one exists
+active task task.yaml, if one exists
 ```
 
-## 12. Proposals Protect Live Rules
+If required files are missing or contradictory, stop and run verify/doctor.
 
-New harness rule changes first go into `proposals/`.
+## Red Lines
 
-After user approval, reflect the proposal into the live file and delete the proposal file.
-
-Do not keep approved proposal files as archive.
-
-After `ce-compound`, use the exact Learning Update Question in `harness/rules/workflow.md`. Do not change live rules until a proposal is approved.
-
-## 13. Handoff Is Conditional
-
-Do not automatically update `handoff.md`.
-
-Update it only when the user explicitly asks for next-chat handoff.
-
-## 14. Explain Simply
-
-The user may be non-technical.
-
-Use the user's language for user-facing questions and confirmations. If the user writes in Korean, ask gate questions in Korean.
-
-When a decision requires technical terms, explain them in plain language before asking for approval. Keep the explanation short enough that a non-developer can decide what is being approved.
-
-Do not hide the actual gate scope behind developer labels. Developer labels such as `Gate id`, `Status`, `PRD`, `issue`, `module`, `branch`, `commit`, and `push` may be shown, but they must be paired with a simple explanation of what changes for the user.
-
-## 15. Git Branch And Commit Control
-
-Substantive project work must not happen directly on `main` after project setup is complete.
-
-Before the first file edit for a substantive task, create or switch to a task branch unless the user explicitly says to work on the current branch.
-
-Branch names use a short ASCII slug:
+Stop immediately if a step would require:
 
 ```text
-task/<task-slug>
+README-first rewrite
+AGENTS-first rewrite
+old v1-v13 source-history as active instruction over FINAL-PLAN
+project file read before grill in product planning
+install-to-planning continuation
+docs-first route
+plan_review completed as implementation approval
+module_structure creating folders
+folder_skeleton creating code/tests/fixtures/runtime config
+"좋아" as broad approval
+product code outside modules without exact outside_modules_write approval
+harness-core edit in product task
+live target access without network.live_target approval
+secret read
+package install without package.install approval
+git commit/push without separate approval
+doctor/update live-editing core rules by default
 ```
 
-Examples:
+## PermissionDecision Preflight
+
+Before risky actions, run or reason through PermissionDecision.
+
+Risky actions include file read/write/delete/move/symlink, command exec, tests/builds, network, package operations, git operations, installer/update/repair, harness-core changes, and parallel writes.
+
+The decision must name:
 
 ```text
-task/g2b-lighting-daily-lookup
-task/module-structure
-task/readme-cleanup
+requested action
+capability
+allow/deny/block/proposal_required
+reason
+matched event ids
+paths or targets covered
+required next action
 ```
 
-Do not run these commands without explicit user approval in the current chat:
+If the decision is not `allow`, do not perform the action.
+
+## Event Log And Projections
+
+Canonical task state lives in:
 
 ```text
-git commit
-git push
-gh pr create
-merge
-release
+harness/docs/tasks/active/<slug>/events.jsonl
 ```
 
-Before asking for approval, show:
+Derived projections:
 
-- Current branch
-- Changed files
-- Short summary of the intended commit or push
-- Verification already run or still needed
+```text
+gate-ledger.md = human-readable projection
+task.yaml = compact cache
+planning-pack.md = final decision manifest
+```
 
-If approval is not given, leave the changes uncommitted and report `git status --short`.
+If `task.yaml` or `gate-ledger.md` says something is approved but `events.jsonl` does not contain the approval, verification fails and the gate stays locked.
+
+Doctor may regenerate projections from canonical events, but it must not invent approvals.
+
+## Gate Question Format
+
+Every gate question must state:
+
+- Gate id
+- Approval scope
+- Artifact or decision being approved
+- Capabilities being allowed
+- Paths or targets being covered
+- This unlocks
+- This remains locked
+- Deferred unknowns requiring separate approval
+
+If the question omits these fields, a short affirmative answer must not open the gate.
+
+Ask in the user's language. If the user writes Korean, ask in Korean and briefly explain technical labels in plain language.
+
+## Workflow Boundaries
+
+`install` stops after install and verify.
+
+`grill` comes before project reads.
+
+`research` comes after grill and may use general web research, not live target access.
+
+`evidence_check` is a legacy alias for `research` only. Prefer `research` or Korean `자료조사` in user-facing gates.
+
+`prd` comes after grill/research.
+
+`issues` comes after approved PRD.
+
+`module_structure` does not create folders.
+
+Plain rule: module_structure does not create folders.
+
+`folder_skeleton` does not create executable files.
+
+Plain rule: folder_skeleton does not create executable files.
+
+`plan_review` does not unlock implementation.
+
+Plain rule: plan_review does not unlock implementation.
+
+`implementation` records exact-scope capability approval.
+
+`work` uses only approved capabilities and paths.
+
+`verification` does not create new feature scope.
+
+`archive` requires archive-summary.
+
+## Module Boundaries
+
+Product code belongs under:
+
+```text
+modules/<module>/**
+```
+
+Writes outside `modules/` require exact `file.write.outside_modules` approval with specific paths and reason.
+
+`module_bootstrap` and `product_feature` are separate task types. Bootstrap creates the workspace only; feature work starts as a new task after bootstrap is verified and archived.
+
+## Installer / Update / Doctor
+
+Installer must create the harness directly under the target root and write `harness.lock.yaml`.
+
+Installer must not create nested template folders, planning artifacts, product code, GitHub repos, commits, or pushes.
+
+`verify` is read-only pass/fail.
+
+`doctor` is read-only diagnosis by default.
+
+`doctor --proposal`, `update`, and `repair` create proposals by default when managed files changed. They must not live-edit harness-core rules without explicit approval.
+
+## Archive And Handoff
+
+Archive is cold context. Read indexes and summaries before detailed archived artifacts.
+
+Root `handoff.md` is updated only when the user asks for handoff or new-chat transfer.

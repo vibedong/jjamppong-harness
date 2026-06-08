@@ -1,0 +1,88 @@
+version: 0.1.0
+name: task-schema
+
+canonical_event_log: events.jsonl
+human_projection: gate-ledger.md
+cache_projection: task.yaml
+
+allowed_task_types:
+  - install
+  - module_bootstrap
+  - product_feature
+  - product_bugfix
+  - template_maintenance
+  - project_policy_change
+  - harness_update
+  - knowledge_maintenance
+  - archive_maintenance
+
+task_types:
+  module_bootstrap:
+    purpose: Create module workspace only.
+    allowed_capabilities:
+      - file.write.folder_skeleton
+      - file.write.task_artifact
+    denied_capabilities:
+      - file.write.module_executable_source
+      - tests.create
+      - fixtures.create
+      - package.install
+      - network.live_target
+      - git.commit
+      - git.push
+    allowed_files:
+      - directories
+      - .gitkeep
+      - MODULE.md
+      - README.md
+      - module-state.md
+    denied_files:
+      - "*.py"
+      - "*.ts"
+      - "*.js"
+      - "*.ps1"
+      - "*.sh"
+      - tests/**
+      - fixtures/**
+      - package.json
+      - pyproject.toml
+      - executable runtime config
+
+  product_feature:
+    purpose: Implement approved vertical slice inside approved module paths.
+    requires:
+      - grill
+      - research
+      - prd
+      - issues
+      - module_structure
+      - writing_plan
+      - plan_review
+      - implementation
+    default_root: modules/
+
+  template_maintenance:
+    purpose: Change harness-core rules/contracts/installer/plugins.
+    requires:
+      - proposal_approved
+      - separate_template_maintenance_checkout
+    forbidden:
+      - product_code
+      - project_domain_solution_as_core_rule_without_proposal
+
+  project_policy_change:
+    purpose: Change project-local policy only.
+    requires:
+      - project_policy_proposal
+    forbidden:
+      - harness_core_rule_change
+
+projections:
+  task_yaml:
+    status: derived_cache
+    may_be_regenerated: true
+    cannot_grant_permission: true
+  gate_ledger_md:
+    status: human_projection
+    may_be_regenerated: true
+    cannot_grant_permission_without_events: true

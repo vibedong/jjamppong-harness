@@ -1,0 +1,79 @@
+version: 0.1.0
+name: ledger-event-schema
+canonical_log: events.jsonl
+append_only: true
+hash_chain_required: true
+
+required_fields:
+  - event_id
+  - schema_version
+  - task_id
+  - event_type
+  - created_at
+  - actor_type
+  - previous_hash
+  - event_hash
+
+fields:
+  event_id: {type: string, format: uuid_or_ulid}
+  schema_version: {type: string}
+  task_id: {type: string}
+  event_type:
+    enum:
+      - task_opened
+      - gate_question
+      - user_answer
+      - approval_decision
+      - gate_status_change
+      - artifact_written
+      - permission_decision
+      - capability_used
+      - verification_result
+      - invalidation
+      - projection_generated
+      - task_archived
+  created_at: {type: string, format: iso8601}
+  actor_type:
+    enum: [user, assistant, tool, verifier, doctor, installer, reviewer]
+  actor_id: {type: string, required: false}
+  previous_hash: {type: string}
+  event_hash: {type: string}
+  payload: {type: object}
+
+payload_schemas:
+  gate_question:
+    required: [gate_id, question_text, explicit_scope, still_forbidden]
+    fields:
+      gate_id: {type: string}
+      question_text: {type: string}
+      explicit_scope: {type: object}
+      still_forbidden: {type: array}
+      target_paths: {type: array, required: false}
+      capability_flags: {type: object, required: false}
+  user_answer:
+    required: [answer_quote, responds_to_event_id]
+    fields:
+      answer_quote: {type: string}
+      responds_to_event_id: {type: string}
+  approval_decision:
+    required: [gate_id, user_answer_event_id, gate_question_event_id, interpreted_scope, effects, invalidates_on]
+    fields:
+      gate_id: {type: string}
+      status: {enum: [approved, rejected, blocked, not_applicable, invalidated]}
+      interpreted_scope: {type: object}
+      effects: {type: object}
+      based_on_artifact_hashes: {type: object}
+      target_paths: {type: object}
+      still_forbidden: {type: array}
+      invalidates_on: {type: array}
+  permission_decision:
+    required: [decision_id, capability, decision, reason, based_on_events]
+    fields:
+      decision_id: {type: string}
+      capability: {type: string}
+      path: {type: string, required: false}
+      target: {type: string, required: false}
+      decision: {enum: [allow, deny, block, proposal_required]}
+      reason: {type: string}
+      required_next_action: {type: object, required: false}
+      based_on_events: {type: array}
