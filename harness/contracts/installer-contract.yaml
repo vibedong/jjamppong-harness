@@ -1,0 +1,79 @@
+version: 0.1.0
+name: installer-contract
+
+modes:
+  install:
+    behavior: install_verify_stop
+    may_modify: [harness_core_files, state_neutral_files, harness_lock]
+    must_not: [start_planning, create_product_task, create_code, run_live_access, commit, push]
+  verify:
+    behavior: read_only_pass_fail
+  doctor:
+    behavior: read_only_diagnose_plus_proposal
+    live_edit_default: false
+  update:
+    behavior: proposal_only_if_managed_files_modified
+  repair:
+    behavior: proposal_only_if_managed_files_modified
+
+ownership_classes:
+  harness_core_owned:
+    examples: [AGENTS.md, harness/rules/**, harness/contracts/**, scripts/install-jjamppong-harness.ps1]
+    update_strategy: replace_with_backup_if_clean_else_proposal
+  project_overlay_owned:
+    examples: [project-local policy files]
+    update_strategy: merge_proposal
+  user_owned:
+    update_strategy: never_overwrite
+  generated_derived:
+    examples: [task.yaml, gate-ledger.md projection, index files]
+    update_strategy: regenerate_from_canonical_when_explicit
+  append_only_canonical:
+    examples: [events.jsonl]
+    update_strategy: append_only_never_rewrite_without_repair_record
+  local_artifact:
+    examples: [harness/artifacts/local/**]
+    update_strategy: gitignored_do_not_publish
+
+fresh_install_requirements:
+  root_items:
+    - AGENTS.md
+    - README.md
+    - CONTEXT.md
+    - handoff.md
+    - harness/
+    - modules/
+    - module-template/
+    - proposals/
+    - harness.lock.yaml
+  forbidden_nested:
+    - jjamppong-harness/
+    - ourosuper-harness/
+  state:
+    active_tasks_empty: true
+    archive_empty_or_gitkeep_only: true
+    planning_state: neutral
+    handoff: neutral
+  git:
+    origin_must_not_be_template_repo: true
+    create_remote_repo_default: false
+    commit_default: false
+    push_default: false
+
+backup_rollback:
+  backup_before_overwrite: true
+  rollback_manifest_required: true
+  idempotent_install_required: true
+
+harness_lock_required_fields:
+  - harness.name
+  - harness.version
+  - installer.package
+  - installer.version
+  - installed_at
+  - installed_from
+  - planning_started
+  - github_repo_created
+  - commit_created
+  - push_performed
+  - managed_files

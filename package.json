@@ -1,0 +1,29 @@
+{
+  "name": "@vibedong/jjamppong-harness",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Jjamppong Harness safety workflow installer and verifier.",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "bin": {
+    "jjamppong": "bin/jjamppong.js"
+  },
+  "files": [
+    "AGENTS.md",
+    "README.md",
+    "CONTEXT.md",
+    "handoff.md",
+    "bin/",
+    "harness/",
+    "module-template/",
+    "modules/",
+    "proposals/",
+    "scripts/"
+  ],
+  "scripts": {
+    "test:contracts": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/contracts/run-all.ps1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

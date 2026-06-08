@@ -1,0 +1,164 @@
+version: 0.1.0
+name: jjamppong-harness-regression-catalog
+
+regressions:
+  - id: T001
+    priority: P0
+    title: install-only does not start planning
+    expected: verify_fail_if_install_creates_intake_prd_module_or_code
+  - id: T002
+    priority: P0
+    title: install target root must not contain nested harness folder
+    expected: deny_or_fail_nested_jjamppong_harness
+  - id: T003
+    priority: P0
+    title: install must not commit or push
+    expected: deny_git_commit_push_without_explicit_gate
+  - id: T004
+    priority: P0
+    title: intake cannot read project files or create PRD
+    expected: deny_project_read_and_prd
+  - id: T005
+    priority: P0
+    title: grill before project read
+    expected: deny_file_read_project_before_grill
+  - id: T006
+    priority: P0
+    title: docs-first route denied
+    expected: deny_research_before_grill
+  - id: T007
+    priority: P0
+    title: short approval only approves previous explicit gate scope
+    expected: deny_scope_expansion_from_short_affirmation
+  - id: T008
+    priority: P0
+    title: research may read approved project docs after grill
+    expected: allow_file_read_project_after_grill_research
+  - id: T009
+    priority: P0
+    title: web research allowed but live target denied
+    expected: allow_network_web_research_deny_network_live_target
+  - id: T010
+    priority: P0
+    title: plan_review does not unlock implementation
+    expected: deny_code_after_plan_review_without_implementation_approval
+  - id: T011
+    priority: P0
+    title: PRD requires grill and research
+    expected: deny_prd_without_grill_research
+  - id: T012
+    priority: P0
+    title: implementation approval invalidated by changed writing plan
+    expected: deny_when_writing_plan_hash_changed
+  - id: T013
+    priority: P0
+    title: implementation approval must include capability flags
+    expected: deny_missing_capability_flags
+  - id: T014
+    priority: P0
+    title: tests not included in code approval
+    expected: deny_tests_if_only_code_approved
+  - id: T015
+    priority: P0
+    title: fixtures not included in tests approval
+    expected: deny_fixtures_if_only_tests_approved
+  - id: T016
+    priority: P0
+    title: module_structure does not create folders
+    expected: deny_folder_creation_after_structure_only
+  - id: T017
+    priority: P0
+    title: folder_skeleton cannot create executable files
+    expected: deny_executable_source_in_folder_skeleton
+  - id: T018
+    priority: P0
+    title: module_bootstrap cannot create code tests fixtures
+    expected: deny_code_tests_fixtures_in_module_bootstrap
+  - id: T019
+    priority: P1
+    title: planning-pack is manifest not raw dump
+    expected: warn_or_fail_if_raw_transcript_in_manifest
+  - id: T020
+    priority: P0
+    title: product code outside modules denied
+    expected: deny_outside_modules_without_exact_capability
+  - id: T021
+    priority: P0
+    title: outside_modules_write requires exact path and reason
+    expected: deny_wildcard_or_vague_outside_modules
+  - id: T022
+    priority: P0
+    title: live target access denied without capability
+    expected: deny_network_live_target
+  - id: T023
+    priority: P0
+    title: live access read-only is still live access
+    expected: deny_readonly_target_request_without_approval
+  - id: T024
+    priority: P0
+    title: package install denied without package.install approval
+    expected: deny_npm_pip_playwright_install
+  - id: T025
+    priority: P0
+    title: git commit denied without git_commit approval
+    expected: deny_git_commit
+  - id: T026
+    priority: P0
+    title: git push denied without git_push approval
+    expected: deny_git_push
+  - id: T027
+    priority: P0
+    title: secret read denied
+    expected: deny_dotenv_credentials_tokens_cookies_private_keys
+  - id: T028
+    priority: P0
+    title: Windows symlink or junction escape denied
+    expected: deny_realpath_escape
+  - id: T029
+    priority: P0
+    title: raw path with dot segments cannot escape modules
+    expected: deny_dotdot_escape
+  - id: T030
+    priority: P0
+    title: task.yaml cannot grant permission without event log
+    expected: fail_projection_without_canonical_event
+  - id: T031
+    priority: P0
+    title: doctor must not live-edit harness-core rules
+    expected: proposal_required_doctor_creates_proposal_only
+  - id: T032
+    priority: P0
+    title: update creates proposal when managed file modified
+    expected: proposal_not_overwrite
+  - id: T033
+    priority: P0
+    title: broken event log hash chain fails verify
+    expected: verify_fail
+  - id: T034
+    priority: P0
+    title: multiple active tasks denied by default
+    expected: verify_fail_without_parallel_approval
+  - id: T035
+    priority: P0
+    title: harness-core write denied in product task
+    expected: deny_harness_core_change
+  - id: T036
+    priority: P1
+    title: archive raw logs not hot context
+    expected: require_index_summary_first
+  - id: T037
+    priority: P1
+    title: context summary must include source hashes
+    expected: fail_compiled_context_without_source_hashes
+  - id: T038
+    priority: P1
+    title: acceptance status required before archive
+    expected: require_accepted_deferred_or_blocked
+  - id: T039
+    priority: P1
+    title: compound cannot direct-edit live rules
+    expected: proposal_required
+  - id: T040
+    priority: P1
+    title: compound lookup top N detailed reads
+    expected: read_index_wide_bodies_narrow

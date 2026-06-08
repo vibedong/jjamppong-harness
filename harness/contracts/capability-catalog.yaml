@@ -1,0 +1,128 @@
+version: 0.1.0
+name: jjamppong-harness-capability-catalog
+principle: >-
+  Permissions are capability-based. File writes are only one capability.
+  Reads, commands, network, package operations, git operations, secrets,
+  installer actions, harness-core changes, and parallel writes are all explicit capabilities.
+
+defaults:
+  missing_capability: deny
+  ambiguous_scope: deny
+  short_approval_expansion: deny
+
+capabilities:
+  file.read.project:
+    description: Read non-secret files inside the project root.
+    default: denied_before_grill
+    unlock: research_after_grill
+  file.read.archive:
+    description: Read archived task details.
+    default: index_only
+    rule: Read index and archive-summary first; raw archive logs require relevance justification.
+  file.read.raw_artifact:
+    description: Read large raw artifacts such as HTML dumps, crawl outputs, logs.
+    default: deny
+  file.read.secret:
+    description: Read credentials, tokens, cookies, private keys, .env files, service accounts.
+    default: deny
+  file.write.task_artifact:
+    description: Write current task artifacts under active task directory.
+    default: gated
+  file.write.module:
+    description: Write approved files under approved modules/<module> paths.
+    default: deny_until_implementation
+  file.write.folder_skeleton:
+    description: Create approved empty module folders and approved non-executable placeholder docs.
+    default: deny_until_folder_skeleton
+  file.write.outside_modules:
+    description: Write product integration files outside modules/.
+    default: deny
+    requires: outside_modules_write capability approval with exact paths
+  file.write.harness_core:
+    description: Write AGENTS.md, harness/rules/**, harness/contracts/**, installer, package, plugin rules.
+    default: deny_in_product_task
+    requires: template_maintenance or harness_update task
+  file.delete:
+    description: Delete files.
+    default: deny_unless_explicit
+  file.move:
+    description: Move or rename files.
+    default: deny_unless_explicit
+  file.symlink:
+    description: Create symlink, junction, hardlink, shortcut, mount-like indirection.
+    default: deny
+
+  exec.readonly_info:
+    description: Non-mutating commands such as git status, listing files, version checks.
+    default: allowed_after_relevant_gate
+  exec.test:
+    description: Run tests.
+    default: deny_until_verification_or_plan
+  exec.build:
+    description: Run build commands.
+    default: deny_until_approved
+  exec.mutating:
+    description: Commands that modify filesystem state.
+    default: deny
+  exec.destructive:
+    description: rm -rf, git clean, force reset, destructive DB operations.
+    default: deny
+  exec.networked:
+    description: Command that contacts network.
+    default: deny_unless_network_capability
+
+  network.web_research:
+    description: General web search or documentation lookup.
+    default: allowed_in_research_with_citation
+  network.live_target:
+    description: Actual target site/API access, including read-only requests, crawl, download, login page, API calls.
+    default: deny_until_live_access_approval
+  network.package_registry:
+    description: npm/pip/apt/other package registry access.
+    default: deny_until_package_install_approval
+  network.authenticated:
+    description: Authenticated network access using token, cookie, account, API key, login.
+    default: deny
+
+  package.install:
+    description: Install or change dependencies, lockfiles, package manager state, runtime packages.
+    default: deny
+  package.update:
+    description: Update dependency versions.
+    default: deny
+
+  git.commit:
+    description: Create a git commit.
+    default: deny_until_git_commit_approval
+  git.push:
+    description: Push to remote.
+    default: deny_until_git_push_approval
+  git.remote_change:
+    description: Add/change/remove git remote.
+    default: deny_unless_install_or_explicit
+
+  installer.install:
+    description: Install harness files.
+    default: allowed_only_in_install_task
+  installer.update:
+    description: Update installed harness files.
+    default: proposal_only_if_modified
+  installer.repair:
+    description: Repair installed harness files.
+    default: proposal_only_if_modified
+  installer.rollback:
+    description: Roll back installer changes using manifest.
+    default: explicit_only
+
+  harness.core_change:
+    description: Change harness core rules/contracts/installer/plugins.
+    default: deny_in_product_repo
+    requires: template_maintenance task and proposal approval
+  project.policy_change:
+    description: Change project-local harness overlay policy.
+    default: proposal_required
+
+  parallel.write:
+    description: Allow multiple active writers/tasks.
+    default: deny
+    requires: explicit_parallel_active_task_approval

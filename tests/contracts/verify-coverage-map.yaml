@@ -1,0 +1,69 @@
+version: 0.1.0
+name: verify-coverage-map
+
+coverage:
+  install_contract:
+    tests: [T001, T002, T003, T032]
+    verify_checks:
+      - install_only_stop
+      - no_nested_harness_folder
+      - no_auto_commit_push
+      - managed_file_update_proposal
+  grill_research_order:
+    tests: [T004, T005, T006, T008, T009, T011]
+    verify_checks:
+      - no_project_read_before_grill
+      - no_docs_first_route
+      - live_access_not_web_research
+      - prd_requires_grill_research
+  approval_contract:
+    tests: [T007, T010, T012, T013, T014, T015]
+    verify_checks:
+      - short_approval_scope
+      - plan_review_not_implementation
+      - artifact_hash_invalidation
+      - explicit_capability_flags
+  module_contract:
+    tests: [T016, T017, T018, T020, T021, T035]
+    verify_checks:
+      - module_structure_no_folder
+      - folder_skeleton_no_code
+      - module_bootstrap_no_product_work
+      - outside_modules_exact_path
+      - harness_core_denied_in_product_task
+  capability_contract:
+    tests: [T022, T023, T024, T025, T026, T027]
+    verify_checks:
+      - live_access_denied
+      - package_install_denied
+      - git_denied
+      - secrets_denied
+  path_contract:
+    tests: [T028, T029]
+    verify_checks:
+      - realpath_containment
+      - symlink_junction_escape
+      - dotdot_escape
+  source_of_truth_contract:
+    tests: [T030, T033]
+    verify_checks:
+      - event_log_canonical
+      - hash_chain_valid
+      - projection_drift_fail
+  doctor_update_contract:
+    tests: [T031, T032]
+    verify_checks:
+      - doctor_proposal_only
+      - update_modified_managed_file_proposal
+  lifecycle_contract:
+    tests: [T034, T036, T037, T038]
+    verify_checks:
+      - active_task_single_default
+      - archive_summary_first
+      - compiled_context_hashes
+      - acceptance_status
+  compound_contract:
+    tests: [T039, T040]
+    verify_checks:
+      - compound_proposal_only_for_rule_change
+      - compound_lookup_limited_body_reads

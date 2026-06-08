@@ -1,0 +1,51 @@
+version: 0.1.0
+name: path-policy-schema
+
+normalization_required:
+  - expand_user_visible_windows_drive_shorthand
+  - normalize_separators
+  - resolve_dot_segments
+  - convert_to_absolute_path
+  - resolve_realpath
+  - case_normalize_when_filesystem_is_case_insensitive
+  - detect_symlink
+  - detect_junction
+  - detect_hardlink_when_possible
+  - reject_alternate_data_streams_on_windows
+  - reject_reserved_device_names_on_windows
+
+windows_cases:
+  drive_shorthand:
+    example: F:mptech
+    policy: normalize_to_explicit_drive_root_or_ask_if_ambiguous
+  unc_paths:
+    example: "\\\\server\\share"
+    policy: deny_unless_project_root_explicitly_unc
+  alternate_data_stream:
+    example: file.txt:stream
+    policy: deny
+  reserved_names:
+    examples: [CON, NUL, AUX, PRN]
+    policy: deny
+  symlink_junction_escape:
+    policy: deny_if_realpath_outside_project_root_or_outside_approved_module
+
+glob_policy:
+  raw_globs_do_not_grant_permission: true
+  glob_must_expand_to_exact_paths_before_decision: true
+  empty_glob: deny
+  glob_with_escape: deny
+
+containment:
+  project_root:
+    required_for_all_repo_writes: true
+  modules_root:
+    default_product_code_root: modules/
+    path_decision_uses: realpath
+  harness_core_paths:
+    - AGENTS.md
+    - harness/rules/**
+    - harness/contracts/**
+    - scripts/install-jjamppong-harness.ps1
+    - plugins/**
+    - package installer files

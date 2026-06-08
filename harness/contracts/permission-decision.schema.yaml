@@ -1,0 +1,95 @@
+version: 0.1.0
+name: permission-decision-schema
+
+required_fields:
+  - decision_id
+  - schema_version
+  - task_id
+  - requested_action
+  - capability
+  - decision
+  - reason
+  - based_on
+  - created_at
+
+decisions:
+  - allow
+  - deny
+  - block
+  - proposal_required
+
+requested_action_fields:
+  action_type:
+    enum:
+      - file_read
+      - file_write
+      - file_delete
+      - command_exec
+      - network_access
+      - package_install
+      - git_operation
+      - installer_operation
+      - harness_core_change
+      - parallel_write
+  path: {type: string, required: false}
+  command: {type: string, required: false}
+  network_target: {type: string, required: false}
+  package_name: {type: string, required: false}
+
+capability_examples:
+  file_write_module: file.write.module
+  live_target: network.live_target
+  package_install: package.install
+  git_push: git.push
+  secret_read: file.read.secret
+
+based_on:
+  required:
+    - canonical_event_log_hash
+    - relevant_event_ids
+    - artifact_hashes
+    - contract_versions
+  fields:
+    canonical_event_log_hash: string
+    relevant_event_ids: array
+    artifact_hashes: object
+    contract_versions: object
+
+path_policy_result:
+  required_when: path_present
+  fields:
+    raw_path: string
+    normalized_path: string
+    absolute_path: string
+    realpath: string
+    project_root: string
+    is_within_project_root: boolean
+    is_within_modules: boolean
+    has_symlink_or_junction: boolean
+    matched_allowed_pattern: string
+    escape_detected: boolean
+
+required_next_action:
+  fields:
+    type:
+      enum: [ask_user, open_gate, create_proposal, run_verify, stop]
+    gate_id: string
+    suggested_user_question: string
+    missing_capabilities: array
+
+invalidation:
+  approval_must_bind_to:
+    - gate_question_event_id
+    - user_answer_event_id
+    - target_paths
+    - capability_flags
+    - artifact_hashes
+  invalidates_when:
+    - prd_hash_changed
+    - issues_hash_changed
+    - module_structure_hash_changed
+    - writing_plan_hash_changed
+    - target_paths_changed
+    - capability_need_added
+    - user_added_new_constraint
+    - contract_version_changed
