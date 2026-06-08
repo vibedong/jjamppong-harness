@@ -1,3 +1,3 @@
-# Grill Summary
+# 사용자 의도 질문 요약
 
-Record user intent questions and answers here after `grill` starts.
+사용자가 원하는 결과, 제외 범위, 성공 기준을 정리합니다.

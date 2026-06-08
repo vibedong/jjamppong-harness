@@ -1,3 +1,3 @@
-# Issues
+# 이슈
 
-Generated only after PRD approval.
+독립적으로 진행 가능한 작업 단위를 정리합니다.

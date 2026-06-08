@@ -1,5 +1,3 @@
-# Current Planning Context
+# 현재 기획 맥락
 
-Compiled context for writing plans.
-
-This file should summarize the current approved intent, research, PRD, issues, module structure, and remaining blockers with source hashes.
+writing_plan이 읽을 압축된 현재 맥락입니다.

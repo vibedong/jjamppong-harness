@@ -1,5 +1,11 @@
-# Implementation Approval
+# 구현 승인 요약
 
-This file records the human-readable approval summary.
+이 파일은 사람이 읽기 위한 승인 요약입니다.
 
-Canonical approval evidence must exist in `events.jsonl`.
+실제 승인 근거는 반드시 `events.jsonl`에 있어야 합니다.
+
+## 승인 범위
+
+- 허용된 작업:
+- 허용된 경로:
+- 아직 잠긴 작업:

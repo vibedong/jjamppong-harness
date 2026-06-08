@@ -1,3 +1,3 @@
 # Writing Plan
 
-Generated after compiled context and approved issues.
+구현 계획을 정리합니다. 이 문서는 구현 승인이 아닙니다.

@@ -35,6 +35,8 @@ foreach ($file in @(
   'harness/templates/task/planning/00-current-planning-context.md',
   'harness/templates/task/planning/01-grill-summary.md',
   'harness/templates/task/planning/02-research-summary.md',
+  'harness/templates/task/planning/02b-compound-lookup.md',
+  'harness/templates/task/planning/02c-architecture-orientation.md',
   'harness/templates/task/planning/03-prd.md',
   'harness/templates/task/planning/04-issues.md',
   'harness/templates/task/planning/05-module-structure.md',
@@ -57,6 +59,49 @@ $context = Get-Content -LiteralPath (Join-Path $RepoRoot 'CONTEXT.md') -Raw
 Assert-Check ($context.Contains('Event log')) 'CONTEXT.md must define Event log.'
 Assert-Check ($context.Contains('Archive summary')) 'CONTEXT.md must define Archive summary.'
 
+$gateLedgerTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\gate-ledger.md') -Raw
+Assert-Check ($gateLedgerTemplate.Contains('승인 기록')) 'gate-ledger template must be user-facing Korean by default.'
+Assert-Check ($gateLedgerTemplate.Contains('원본 기록')) 'gate-ledger template must explain canonical source in Korean.'
+Assert-Check ($gateLedgerTemplate.Contains('events.jsonl')) 'gate-ledger template must still reference events.jsonl.'
+Assert-Check ($gateLedgerTemplate.Contains('이 파일만 보고 권한을 판단하지 마세요')) 'gate-ledger template must warn that it is not the authority.'
+
+$archiveTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\archive-summary.md') -Raw
+Assert-Check ($archiveTemplate.Contains('보관 요약')) 'archive summary template must be user-facing Korean by default.'
+
+$verificationTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\verification.md') -Raw
+Assert-Check ($verificationTemplate.Contains('검증 기록')) 'verification template must be user-facing Korean by default.'
+
+$approvalTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\implementation-approval.md') -Raw
+Assert-Check ($approvalTemplate.Contains('구현 승인 요약')) 'implementation approval template must be user-facing Korean by default.'
+Assert-Check ($approvalTemplate.Contains('events.jsonl')) 'implementation approval template must still reference canonical events.'
+
+$planningPackTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\planning-pack.md') -Raw
+Assert-Check ($planningPackTemplate.Contains('최종 결정 manifest')) 'planning-pack template must define itself as a final decision manifest.'
+Assert-Check ($planningPackTemplate.Contains('raw transcript를 누적하지 않습니다')) 'planning-pack template must reject raw transcript accumulation.'
+Assert-Check ($planningPackTemplate.Contains('06-writing-plan.md')) 'planning-pack template must point to writing plan artifact.'
+
+$planningTemplateTokens = @{
+  '00-current-planning-context.md' = '현재 기획 맥락'
+  '01-grill-summary.md' = '사용자 의도 질문 요약'
+  '02-research-summary.md' = '자료조사 요약'
+  '02b-compound-lookup.md' = 'Compound 조회'
+  '02c-architecture-orientation.md' = '아키텍처 방향'
+  '03-prd.md' = 'PRD'
+  '04-issues.md' = '이슈'
+  '05-module-structure.md' = '모듈 구조'
+  '06-writing-plan.md' = 'Writing Plan'
+  '07-plan-review.md' = '계획 리뷰'
+}
+foreach ($entry in $planningTemplateTokens.GetEnumerator()) {
+  $content = Get-Content -LiteralPath (Join-Path $RepoRoot "harness\templates\task\planning\$($entry.Key)") -Raw
+  Assert-Check ($content.Contains($entry.Value)) "planning template $($entry.Key) must contain unique token $($entry.Value)."
+}
+
+$taskYamlTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\task.yaml') -Raw
+Assert-Check ($taskYamlTemplate.Contains('cache_projection: task.yaml')) 'task.yaml template must remain machine-readable cache projection.'
+$eventsTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\events.jsonl.template') -Raw
+Assert-Check ($eventsTemplate.Contains('template_only')) 'events.jsonl template must remain a template-only marker, not live approval evidence.'
+
 $root = New-LifecycleRoot
 try {
   $createOutput = & node $lifecycle create-task --root $root --slug 'test-task' --task-type 'product_feature'
@@ -69,6 +114,18 @@ try {
   }
   $events = Get-Content -LiteralPath (Join-Path $taskRoot 'events.jsonl') -Raw
   Assert-Check ([string]::IsNullOrWhiteSpace($events)) 'Live events.jsonl should start empty.'
+  $liveGateLedger = Get-Content -LiteralPath (Join-Path $taskRoot 'gate-ledger.md') -Raw
+  Assert-Check ($liveGateLedger.Contains('승인 기록')) 'generated gate-ledger.md must use human-facing starter copy.'
+  Assert-Check ($liveGateLedger.Contains('events.jsonl')) 'generated gate-ledger.md must point to canonical events.'
+
+  $livePlanningPack = Get-Content -LiteralPath (Join-Path $taskRoot 'planning-pack.md') -Raw
+  Assert-Check ($livePlanningPack.Contains('최종 결정 manifest')) 'generated planning-pack.md must preserve decision-manifest wording.'
+  Assert-Check ($livePlanningPack.Contains('raw transcript를 누적하지 않습니다')) 'generated planning-pack.md must reject transcript dumping.'
+
+  foreach ($entry in $planningTemplateTokens.GetEnumerator()) {
+    $content = Get-Content -LiteralPath (Join-Path $taskRoot "planning\$($entry.Key)") -Raw
+    Assert-Check ($content.Contains($entry.Value)) "generated planning file $($entry.Key) must contain unique token $($entry.Value)."
+  }
 
   $oldErrorActionPreference = $ErrorActionPreference
   $nativePreference = Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue

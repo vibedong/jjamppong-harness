@@ -1,3 +1,3 @@
-# Plan Review
+# 계획 리뷰
 
-Plan review completion does not grant implementation permission.
+CEO, 엔지니어링, 준수 관점의 리뷰 결과를 정리합니다.

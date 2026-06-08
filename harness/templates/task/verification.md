@@ -1,3 +1,12 @@
-# Verification
+# 검증 기록
 
-Record verification commands, results, and remaining risk here.
+검증 명령, 결과, 남은 위험을 적습니다.
+
+## 실행한 검증
+
+| 명령 | 기대 결과 | 실제 결과 | 통과 여부 |
+| --- | --- | --- | --- |
+
+## 남은 위험
+
+- 아직 없음

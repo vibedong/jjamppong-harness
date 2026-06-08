@@ -1,3 +1,3 @@
-# Research Summary
+# 자료조사 요약
 
-Record approved project evidence and general web research here after `research` opens.
+승인된 자료조사 결과와 근거를 정리합니다.

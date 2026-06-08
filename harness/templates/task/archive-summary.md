@@ -1,19 +1,19 @@
-# Archive Summary
+# 보관 요약
 
-Required before moving an active task to archive.
+active task를 archive로 옮기기 전에 작성하는 사람용 요약입니다.
 
-## Outcome
+## 결과
 
-- Status:
-- Accepted by user:
-- Deferred:
-- Blocked:
+- 상태:
+- 사용자 확인:
+- 미룬 일:
+- 막힌 일:
 
-## Reusable Learning
+## 다시 쓸 수 있는 배움
 
-- None yet.
+- 아직 없음
 
-## Source Hashes
+## 원본 해시
 
-| Artifact | Hash |
+| 산출물 | 해시 |
 | --- | --- |

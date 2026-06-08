@@ -43,6 +43,22 @@ vibedong/jjamppong-harness.git 설치해줘.
 
 하네스는 하위 폴더에 들어가는 앱이 아니라, 프로젝트 루트에 펼쳐지는 작업 규칙입니다.
 
+## 자주 보이는 문구와 파일
+
+Gate id는 지금 어느 단계의 허락을 받는지 보여주는 이름표입니다.
+
+예를 들어 `Gate id: implementation`이 보이면 "이제 구현을 시작해도 되는지 묻는 단계"라는 뜻입니다.
+
+자주 보이는 예시는 `Gate id: planning`, `Gate id: implementation`, `Gate id: handoff`입니다.
+
+events.jsonl은 실제 승인 기록 원본입니다. 작업이 진행되면 events.jsonl에 새 줄이 추가될 수 있습니다. 이 파일이 바뀌는 것은 정상입니다. 다만 기존 기록을 마음대로 고쳐 쓰면 안 됩니다.
+
+gate-ledger.md는 사람이 읽기 쉽게 정리한 승인 기록입니다. AI가 상황 파악용으로 읽을 수는 있지만, 권한 판단의 원본은 `events.jsonl`입니다.
+
+task.yaml은 현재 상태를 빠르게 읽는 요약 파일입니다. 이것도 권한 원본은 아닙니다.
+
+handoff.md는 새 채팅으로 넘길 상태 요약입니다. handoff.md를 만든 뒤에는 다음 채팅에 붙여넣을 프롬프트를 채팅 응답으로 출력합니다.
+
 ## 하네스가 막는 것
 
 - 설치만 했는데 PRD, issue, module, code를 바로 만드는 것

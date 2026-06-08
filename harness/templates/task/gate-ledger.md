@@ -1,15 +1,21 @@
-# Gate Ledger Projection
+# 승인 기록
 
-This file is a human-readable projection.
+이 파일은 사람이 읽기 쉽게 정리한 승인 기록입니다.
 
-Canonical source of truth:
+원본 기록:
 
 ```text
 events.jsonl
 ```
 
-Do not grant permission from this file alone.
+이 파일만 보고 권한을 판단하지 마세요. 실제 권한 판단은 `events.jsonl`, contracts, PermissionDecision을 기준으로 합니다.
 
-## Projection Entries
+## 현재 상태
 
-No gate entries yet.
+- 현재 단계:
+- 마지막으로 승인된 것:
+- 아직 잠긴 것:
+
+## 승인 내역
+
+아직 기록된 승인 내역이 없습니다.

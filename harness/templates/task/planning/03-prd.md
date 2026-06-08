@@ -1,3 +1,3 @@
 # PRD
 
-Generated only after grill and research gates allow it.
+제품 요구사항과 성공 기준을 정리합니다.

@@ -65,6 +65,11 @@ Ask user-facing gate questions in the user's language.
 
 If the user writes Korean, ask in Korean and explain technical labels briefly in plain language.
 
+- Human-facing artifacts use the user's language.
+- Machine-readable artifacts keep stable schema keys.
+- Static templates may use Korean starter copy; agents write live human-facing artifacts in the current user's language when presenting or updating them.
+- This phase does not add lifecycle-level localization.
+
 ## Git
 
 Do not run `git commit`, `git push`, PR, merge, tag, or release commands unless the user explicitly approves that exact action in the current chat.

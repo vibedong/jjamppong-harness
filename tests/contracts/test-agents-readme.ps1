@@ -53,6 +53,10 @@ foreach ($token in @(
   'Harness-core changes in product tasks must become proposals',
   'Doctor/update/repair are proposal-only',
   'Ask user-facing gate questions in the user''s language',
+  'Human-facing artifacts use the user''s language',
+  'Machine-readable artifacts keep stable schema keys',
+  'Static templates may use Korean starter copy',
+  'This phase does not add lifecycle-level localization',
   'git commit',
   'git push'
 )) {
@@ -87,6 +91,16 @@ foreach ($token in @(
   '하네스가 막는 것',
   '실제 작업 흐름',
   'plan review',
+  'Gate id는 지금 어느 단계의 허락을 받는지 보여주는 이름표입니다',
+  'events.jsonl은 실제 승인 기록 원본입니다',
+  '작업이 진행되면 events.jsonl에 새 줄이 추가될 수 있습니다',
+  'gate-ledger.md는 사람이 읽기 쉽게 정리한 승인 기록입니다',
+  'task.yaml은 현재 상태를 빠르게 읽는 요약 파일입니다',
+  'handoff.md는 새 채팅으로 넘길 상태 요약입니다',
+  'handoff.md를 만든 뒤에는 다음 채팅에 붙여넣을 프롬프트를 채팅 응답으로 출력합니다',
+  'Gate id: planning',
+  'Gate id: implementation',
+  'Gate id: handoff',
   '좋은 문서가 아니라, AI가 통과해야 하는 문을 만든다'
 )) {
   Assert-Check ($readme.Contains($token)) "README.md missing user-guide token: $token"

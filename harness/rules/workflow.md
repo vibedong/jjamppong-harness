@@ -27,6 +27,22 @@ Explain the workflow to users in simple Korean when they write in Korean.
 
 Do not show every internal gate first. Show the simple label and the internal gate id when asking for approval.
 
+## Artifact Language Policy
+
+Human-facing artifacts use the user's language.
+
+Human-facing artifacts include `gate-ledger.md`, planning artifacts, `archive-summary.md`, `verification.md`, and `handoff.md`.
+
+gate-ledger.md, planning artifacts, archive-summary.md, verification.md, and handoff.md are human-facing.
+
+Static templates may use Korean starter copy. This phase does not add lifecycle-level localization. When an agent presents or updates live human-facing artifacts, the agent writes them in the current user's language.
+
+Agents write live human-facing artifacts in the current user's language.
+
+Machine-readable artifacts keep stable schema keys.
+
+Machine-readable artifacts include `events.jsonl`, `task.yaml`, contracts, and PermissionDecision outputs. events.jsonl, task.yaml, contracts, and PermissionDecision outputs keep stable machine-readable keys.
+
 ## Canonical Gate Order
 
 ```text
@@ -230,3 +246,7 @@ Archive requires `archive-summary.md`.
 Archive is cold context. Future tasks read indexes and summaries before detailed archived artifacts.
 
 `handoff.md` is updated only when the user asks for a new-chat handoff.
+
+handoff.md is a status summary, not the restart prompt container.
+
+The next-chat prompt is returned in the chat response.

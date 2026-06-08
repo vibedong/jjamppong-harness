@@ -1,3 +1,3 @@
-# Compound Lookup
+# Compound 조회
 
-Record index-first learning lookup results here.
+관련 과거 배움이나 패턴을 정리합니다.

@@ -25,6 +25,22 @@ The permission source of truth is:
 - Harness-core writes in product tasks: deny; create proposal instead.
 - Parallel active write: deny until explicit parallel approval.
 
+## Artifact Language Policy
+
+Human-facing artifacts use the user's language.
+
+Static templates may use Korean starter copy. This phase does not add lifecycle-level localization. Agents write live human-facing artifacts in the current user's language when presenting or updating them.
+
+Machine-readable artifacts keep stable schema keys.
+
+`events.jsonl`, `task.yaml`, contracts, and PermissionDecision outputs keep stable machine-readable keys.
+
+events.jsonl, task.yaml, contracts, and PermissionDecision outputs keep stable machine-readable keys.
+
+`gate-ledger.md`, planning artifacts, `archive-summary.md`, `verification.md`, and `handoff.md` are human-facing.
+
+gate-ledger.md, planning artifacts, archive-summary.md, verification.md, and handoff.md are human-facing.
+
 ## Required Reads For Substantive Work
 
 Read these before any substantive write:
@@ -186,3 +202,19 @@ Installer must not create nested template folders, planning artifacts, product c
 Archive is cold context. Read indexes and summaries before detailed archived artifacts.
 
 Root `handoff.md` is updated only when the user asks for handoff or new-chat transfer.
+
+## Handoff Response
+
+Root `handoff.md` is updated only when the user asks for handoff or new-chat transfer.
+
+When creating handoff.md, do not embed the restart prompt in the file by default.
+
+After creating handoff.md, return a copy-paste next-chat prompt in the chat response.
+
+Use this Korean prompt when the user is working in Korean:
+
+```text
+handoff.md 보고 이어서 진행해줘.
+먼저 AGENTS.md, harness/rules/workflow.md, 현재 active task의 task.yaml/events.jsonl을 확인해줘.
+현재 gate 상태를 확인한 뒤, 바로 구현하지 말고 필요한 다음 단계부터 이어서 진행해줘.
+```

@@ -1,3 +1,3 @@
-# Architecture Orientation
+# 아키텍처 방향
 
-Explain the technical shape in user-readable language before PRD finalization when needed.
+필요한 경우 PRD 확정 전에 기술적 모양을 사용자 언어로 설명합니다.

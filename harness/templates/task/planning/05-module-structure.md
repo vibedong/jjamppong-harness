@@ -1,3 +1,3 @@
-# Module Structure
+# 모듈 구조
 
-Generated only when module structure is part of the task.
+구현을 어디에 둘지 정리합니다. 이 문서는 폴더 생성을 승인하지 않습니다.
