@@ -9,19 +9,20 @@ AI가 바로 코드를 만들지 않고, **질문 -> 기획 -> 승인 -> 실행 
 Codex에게 아래처럼 말하면 됩니다.
 
 ```text
-vibedong/jjamppong-harness.git <설치할_프로젝트_폴더>에 설치해줘.
+vibedong/jjamppong-harness.git 설치해줘.
+설치할 위치는 내가 말한 프로젝트 폴더를 사용해줘.
 설치 후 verify까지만 하고 멈춰.
 기존 .git과 origin은 보존해줘.
 ```
 
-`<설치할_프로젝트_폴더>`에는 실제 프로젝트 폴더 경로를 넣으면 됩니다.
+설치할 폴더는 Codex에게 말할 때 같이 지정하면 됩니다.
 
 ## 설치 결과
 
 정상 설치되면 대상 폴더 바로 아래에 하네스 파일이 생깁니다.
 
 ```text
-<설치할_프로젝트_폴더>/
+프로젝트 폴더/
   AGENTS.md
   README.md
   CONTEXT.md
@@ -36,8 +37,8 @@ vibedong/jjamppong-harness.git <설치할_프로젝트_폴더>에 설치해줘.
 잘못된 설치입니다.
 
 ```text
-<설치할_프로젝트_폴더>/jjamppong-harness/AGENTS.md
-<설치할_프로젝트_폴더>/ourosuper-harness/AGENTS.md
+프로젝트 폴더/jjamppong-harness/AGENTS.md
+프로젝트 폴더/ourosuper-harness/AGENTS.md
 ```
 
 하네스는 하위 폴더에 들어가는 앱이 아니라, 프로젝트 루트에 펼쳐지는 작업 규칙입니다.
