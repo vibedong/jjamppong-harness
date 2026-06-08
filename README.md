@@ -1,32 +1,34 @@
 # 짬뽕하네스
 
-짬뽕하네스는 AI가 바로 코드를 만들지 않고, **질문 → 기획 → 승인 → 실행 → 검증** 순서로 움직이게 하는 안전 하네스입니다.
+AI가 바로 코드를 만들지 않고, **질문 -> 기획 -> 승인 -> 실행 -> 검증** 순서로 움직이게 하는 안전 하네스입니다.
 
-목표는 빠른 코딩만이 아닙니다. 사용자가 승인하지 않은 파일, 코드, 테스트, 웹 접속, 패키지 설치, commit, push로 AI가 튀지 못하게 막는 것입니다.
+설치만 하면 프로젝트 루트에 `AGENTS.md`, `harness/`, `modules/` 같은 운영 파일이 깔리고, 이후 AI는 정해진 gate와 permission을 통과해야 작업할 수 있습니다.
 
 README는 안내서입니다. 실제 기준은 `harness/contracts/`, `harness/rules/`, `verify`, `doctor`, `PermissionDecision`입니다.
 
-## 설치
+## 빠른 설치
 
-권장 설치 방식은 npm/npx CLI입니다.
+가장 쉬운 설치 명령입니다.
 
 ```bash
 npx @vibedong/jjamppong-harness@0.1.0 install --target F:/mptech
 ```
 
-로컬 템플릿에서 테스트하거나 직접 설치할 때는:
+설치 후 AI는 설치와 검증만 하고 멈춰야 합니다.
 
-```bash
-node bin/jjamppong.js install --target F:/mptech --template .
-```
+하면 안 되는 것:
 
-PowerShell wrapper도 있습니다.
+- 설치 직후 PRD 작성
+- 이슈 생성
+- 모듈 생성
+- 코드 작성
+- package install
+- commit
+- push
 
-```powershell
-.\scripts\install-jjamppong-harness.ps1 . F:mptech -SkipGitHubRepo
-```
+## 설치 결과
 
-설치 결과는 대상 폴더 바로 아래에 생겨야 합니다.
+정상 설치되면 대상 폴더 바로 아래에 파일이 생깁니다.
 
 ```text
 F:/mptech/
@@ -41,14 +43,34 @@ F:/mptech/
   harness.lock.yaml
 ```
 
-잘못된 설치:
+잘못된 설치입니다.
 
 ```text
 F:/mptech/jjamppong-harness/AGENTS.md
 F:/mptech/ourosuper-harness/AGENTS.md
 ```
 
-설치는 설치와 검증만 하고 멈춥니다. 설치만 요청했는데 PRD, 이슈, 모듈, 코드, commit, push가 생기면 실패입니다.
+하네스는 하위 폴더에 들어가는 패키지가 아니라, 프로젝트 루트에 펼쳐지는 작업 규칙입니다.
+
+## GitHub에서 바로 설치
+
+npm 배포판 대신 GitHub 공개 저장소에서 바로 실행할 수도 있습니다.
+
+```bash
+npx github:vibedong/jjamppong-harness install --target F:/mptech
+```
+
+로컬에서 직접 테스트할 때는:
+
+```bash
+node bin/jjamppong.js install --target F:/mptech --template .
+```
+
+PowerShell wrapper도 있습니다.
+
+```powershell
+.\scripts\install-jjamppong-harness.ps1 . F:mptech -SkipGitHubRepo
+```
 
 ## 핵심 개념
 
@@ -105,7 +127,7 @@ plan_review completed != implementation approved
 이 범위로 작업을 시작해도 될까요?
 ```
 
-사용자가 “좋아”라고 답해도 위 질문에 적힌 범위만 승인됩니다. 나중 단계나 다른 파일은 자동 승인되지 않습니다.
+사용자가 "좋아"라고 답해도 위 질문에 적힌 범위만 승인됩니다. 나중 단계나 다른 파일은 자동 승인되지 않습니다.
 
 ## 폴더틀, 코드, 테스트, fixture
 
@@ -141,31 +163,31 @@ plan_review completed != implementation approved
 
 ## 검증
 
-계약 테스트:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tests/contracts/run-all.ps1
-```
-
 설치된 프로젝트 검증:
 
 ```bash
-node bin/jjamppong.js verify --target F:/mptech
+npx @vibedong/jjamppong-harness@0.1.0 verify --target F:/mptech
 ```
 
 문제 진단:
 
 ```bash
-node bin/jjamppong.js doctor --target F:/mptech
+npx @vibedong/jjamppong-harness@0.1.0 doctor --target F:/mptech
 ```
 
 proposal까지 만들려면:
 
 ```bash
-node bin/jjamppong.js doctor --target F:/mptech --proposal
+npx @vibedong/jjamppong-harness@0.1.0 doctor --target F:/mptech --proposal
 ```
 
 doctor는 기본적으로 live file을 고치지 않습니다. proposal을 만들어도 사용자가 따로 승인해야 합니다.
+
+개발자가 계약 테스트를 돌릴 때는:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/contracts/run-all.ps1
+```
 
 ## 안전 기준
 
@@ -177,7 +199,7 @@ doctor는 기본적으로 live file을 고치지 않습니다. proposal을 만�
 - plan review만 끝나고 바로 코드 작성
 - module structure 승인만으로 폴더 생성
 - folder skeleton 승인만으로 코드/테스트/fixture 생성
-- “좋아”를 넓은 승인으로 해석
+- "좋아"를 넓은 승인으로 해석
 - live target access를 일반 웹 검색처럼 처리
 - package install, commit, push를 묵시적으로 실행
 - product task에서 harness-core rules를 직접 수정

@@ -5,6 +5,17 @@
   "description": "Jjamppong Harness safety workflow installer and verifier.",
   "license": "UNLICENSED",
   "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vibedong/jjamppong-harness.git"
+  },
+  "homepage": "https://github.com/vibedong/jjamppong-harness#readme",
+  "bugs": {
+    "url": "https://github.com/vibedong/jjamppong-harness/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "jjamppong": "bin/jjamppong.js"
   },
