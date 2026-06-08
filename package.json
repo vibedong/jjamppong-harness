@@ -1,6 +1,6 @@
 {
   "name": "jjamppong-harness",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Jjamppong Harness safety workflow installer and verifier.",
   "license": "UNLICENSED",

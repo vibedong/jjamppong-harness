@@ -6,7 +6,22 @@ AI가 바로 코드를 만들지 않고, **질문 -> 기획 -> 승인 -> 실행 
 
 ## Codex에게 설치시키기
 
-Codex에게 아래처럼 말하면 됩니다.
+npm에 공개된 패키지로 설치할 수 있습니다. Codex에게 아래처럼 말하면 됩니다.
+
+```text
+jjamppong-harness@latest를 설치해줘.
+설치할 위치는 내가 말한 프로젝트 폴더를 사용해줘.
+설치 후 verify까지만 하고 멈춰.
+기존 .git과 origin은 보존해줘.
+```
+
+직접 명령으로 실행할 때는 이렇게 씁니다.
+
+```powershell
+npx jjamppong-harness@latest install --target 원하는-프로젝트-폴더
+```
+
+GitHub 저장소 방식도 계속 사용할 수 있습니다.
 
 ```text
 vibedong/jjamppong-harness.git 설치해줘.
