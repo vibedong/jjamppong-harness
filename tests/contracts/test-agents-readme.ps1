@@ -75,10 +75,10 @@ foreach ($token in @(
   '프로젝트 폴더에 하네스를 설치하면',
   'Codex에게 설치시키기',
   'Codex에게 아래처럼 말하면 됩니다',
-  'vibedong/jjamppong-harness.git F:/mptech에 설치해줘',
+  'vibedong/jjamppong-harness.git <설치할_프로젝트_폴더>에 설치해줘',
   '설치 후 verify까지만 하고 멈춰',
   '기존 .git과 origin은 보존',
-  '`F:/mptech`만 원하는 프로젝트 폴더로 바꾸면 됩니다',
+  '`<설치할_프로젝트_폴더>`에는 실제 프로젝트 폴더 경로를 넣으면 됩니다',
   '설치 결과',
   'harness.lock.yaml',
   '잘못된 설치',
@@ -92,6 +92,8 @@ foreach ($token in @(
 
 foreach ($forbidden in @(
   '이 저장소는 npm 패키지가 아닙니다',
+  'F:/mptech',
+  'F:mptech',
   'npx @vibedong/jjamppong-harness@0.1.0',
   'npx github:vibedong/jjamppong-harness',
   'README is the source of truth',
