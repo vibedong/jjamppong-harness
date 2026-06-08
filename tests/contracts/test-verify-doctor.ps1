@@ -34,7 +34,7 @@ function New-FixtureRoot {
     '  name: jjamppong-harness',
     '  version: 0.1.0',
     'installer:',
-    '  package: "@vibedong/jjamppong-harness"',
+    '  package: "@donghyeonlee/jjamppong-harness"',
     '  version: 0.1.0',
     'installed_at: "2026-06-08T00:00:00+09:00"',
     'installed_from: test-fixture',

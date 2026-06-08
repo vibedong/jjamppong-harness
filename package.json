@@ -1,5 +1,5 @@
 {
-  "name": "@vibedong/jjamppong-harness",
+  "name": "@donghyeonlee/jjamppong-harness",
   "version": "0.1.0",
   "private": false,
   "description": "Jjamppong Harness safety workflow installer and verifier.",
