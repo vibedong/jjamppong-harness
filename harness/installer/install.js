@@ -131,7 +131,7 @@ function writeHarnessLock(targetRoot, options, managedFiles, rollbackFiles) {
     '  name: jjamppong-harness',
     `  version: ${options.version}`,
     'installer:',
-    '  package: "@donghyeonlee/jjamppong-harness"',
+    '  package: "jjamppong-harness"',
     `  version: ${options.version}`,
     `installed_at: "${new Date().toISOString()}"`,
     `installed_from: "${options.templateRoot.replace(/\\/g, '/')}"`,
