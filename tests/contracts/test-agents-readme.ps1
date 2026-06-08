@@ -71,14 +71,21 @@ foreach ($forbidden in @(
 
 foreach ($token in @(
   '# 짬뽕하네스',
-  'Codex에게 아래 문구를 그대로 보내세요',
+  'AI가 바로 코드를 만들지 않고',
+  '프로젝트 폴더에 하네스를 설치하면',
+  'Codex에게 설치시키기',
+  'Codex에게 아래처럼 말하면 됩니다',
   'vibedong/jjamppong-harness.git F:/mptech에 설치해줘',
-  'GitHub 공개 저장소를 임시 폴더에 clone',
-  'node bin/jjamppong.js install --target F:/mptech --template <임시클론경로>',
   '설치 후 verify까지만 하고 멈춰',
-  'planning, PRD, issue, module, code, package install, commit, push는 시작하지 마',
-  '대상 프로젝트의 .git과 origin은 보존',
-  '`F:/mptech`만 원하는 프로젝트 경로로 바꾸면 됩니다'
+  '기존 .git과 origin은 보존',
+  '`F:/mptech`만 원하는 프로젝트 폴더로 바꾸면 됩니다',
+  '설치 결과',
+  'harness.lock.yaml',
+  '잘못된 설치',
+  '하네스가 막는 것',
+  '실제 작업 흐름',
+  'plan review',
+  '좋은 문서가 아니라, AI가 통과해야 하는 문을 만든다'
 )) {
   Assert-Check ($readme.Contains($token)) "README.md missing user-guide token: $token"
 }
