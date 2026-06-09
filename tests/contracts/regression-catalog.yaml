@@ -162,3 +162,19 @@ regressions:
     priority: P1
     title: compound lookup top N detailed reads
     expected: read_index_wide_bodies_narrow
+  - id: T041
+    priority: P0
+    title: writing_plan requires read receipts for PRD issues and module structure
+    expected: verify_fail_without_required_artifact_read_receipts
+  - id: T042
+    priority: P1
+    title: compound capture writes learning candidates before archive
+    expected: require_learning_capture_artifact
+  - id: T043
+    priority: P0
+    title: long-term solution writes require compound_review approval
+    expected: verify_fail_solution_write_without_compound_review
+  - id: T044
+    priority: P1
+    title: compound learning artifacts are human-facing user-language documents
+    expected: require_user_language_learning_templates

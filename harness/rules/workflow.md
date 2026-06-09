@@ -122,6 +122,37 @@ plan_review completed != implementation approved
 
 Plan review completion only opens the implementation approval question.
 
+## Artifact Routing
+
+Before a gate or skill starts, check:
+
+```text
+harness/contracts/artifact-registry.yaml
+harness/contracts/skill-artifact-map.yaml
+```
+
+Do not rely on memory for required artifacts.
+
+Read receipts prove that the required artifacts were actually read.
+
+Read receipts are recorded as `artifact_read` events in `events.jsonl`.
+
+`compound_lookup` reads solution indexes before detailed solution files.
+
+Plain rule: compound_lookup reads solution indexes before detailed solution files.
+
+`compound_capture` records candidates in `learning-capture.md`.
+
+Plain rule: compound_capture records candidates in `learning-capture.md`.
+
+Plain rule: compound_capture records candidates before archive.
+
+`compound_review` decides long-term promotion before anything under `harness/docs/solutions/` is changed.
+
+Plain rule: compound_review decides long-term promotion.
+
+`learning-capture.md` and `compound-review.md` are human-facing artifacts and use the user's language.
+
 ## Folder Skeleton
 
 `folder_skeleton` is a separate gate.

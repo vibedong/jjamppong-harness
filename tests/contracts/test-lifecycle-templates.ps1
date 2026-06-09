@@ -42,10 +42,17 @@ foreach ($file in @(
   'harness/templates/task/planning/05-module-structure.md',
   'harness/templates/task/planning/06-writing-plan.md',
   'harness/templates/task/planning/07-plan-review.md',
+  'harness/templates/task/learning-capture.md',
+  'harness/templates/task/compound-review.md',
   'harness/templates/task/archive-summary.md',
   'harness/templates/module/module-state.md',
   'harness/docs/tasks/index.md',
-  'harness/docs/tasks/archive/index.md'
+  'harness/docs/tasks/archive/index.md',
+  'harness/docs/solutions/index.md',
+  'harness/docs/solutions/harness-drift-patterns.md',
+  'harness/docs/solutions/installer-flow-patterns.md',
+  'harness/docs/solutions/planning-gate-patterns.md',
+  'harness/docs/solutions/permission-boundary-patterns.md'
 )) {
   Assert-Check (Test-Path -LiteralPath (Join-Path $RepoRoot $file)) "Missing lifecycle/template file: $file"
 }
@@ -74,6 +81,23 @@ Assert-Check ($verificationTemplate.Contains('검증 기록')) 'verification tem
 $approvalTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\implementation-approval.md') -Raw
 Assert-Check ($approvalTemplate.Contains('구현 승인 요약')) 'implementation approval template must be user-facing Korean by default.'
 Assert-Check ($approvalTemplate.Contains('events.jsonl')) 'implementation approval template must still reference canonical events.'
+
+$learningTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\learning-capture.md') -Raw
+Assert-Check ($learningTemplate.Contains('배운 점 후보')) 'learning-capture template must be user-facing Korean by default.'
+Assert-Check ($learningTemplate.Contains('raw 대화 전문을 저장하지 않습니다')) 'learning-capture template must reject raw transcript storage.'
+Assert-Check ($learningTemplate.Contains('candidate_count: 0')) 'learning-capture template must expose candidate_count metadata.'
+Assert-Check ($learningTemplate.Contains('source_events_hash:')) 'learning-capture template must expose source event hash metadata.'
+Assert-Check ($learningTemplate.Contains('compound-review.md')) 'learning-capture template must point to compound review.'
+
+$compoundReviewTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\compound-review.md') -Raw
+Assert-Check ($compoundReviewTemplate.Contains('Compound Review')) 'compound review template must exist.'
+Assert-Check ($compoundReviewTemplate.Contains('promote / keep_active_only / merge_existing / discard')) 'compound review template must define decisions.'
+Assert-Check ($compoundReviewTemplate.Contains('사용자 승인 없이 live harness rule을 직접 수정하지 않습니다')) 'compound review template must block unapproved live rule edits.'
+
+$solutionsIndex = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\docs\solutions\index.md') -Raw
+Assert-Check ($solutionsIndex.Contains('Compound Solutions Index')) 'solutions index must define compound solutions.'
+Assert-Check ($solutionsIndex.Contains('harness-drift-patterns.md')) 'solutions index must link harness drift bucket.'
+Assert-Check ($solutionsIndex.Contains('compound-review.md')) 'solutions index must require compound review before promotion.'
 
 $planningPackTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\planning-pack.md') -Raw
 Assert-Check ($planningPackTemplate.Contains('최종 결정 manifest')) 'planning-pack template must define itself as a final decision manifest.'
@@ -109,7 +133,7 @@ try {
   Assert-Check ($created.ok -eq $true) 'create-task should return ok.'
 
   $taskRoot = Join-Path $root 'harness\docs\tasks\active\test-task'
-  foreach ($file in @('task.yaml', 'events.jsonl', 'gate-ledger.md', 'planning-pack.md', 'planning\00-current-planning-context.md', 'planning\06-writing-plan.md', 'archive-summary.md')) {
+  foreach ($file in @('task.yaml', 'events.jsonl', 'gate-ledger.md', 'planning-pack.md', 'planning\00-current-planning-context.md', 'planning\06-writing-plan.md', 'learning-capture.md', 'compound-review.md', 'archive-summary.md')) {
     Assert-Check (Test-Path -LiteralPath (Join-Path $taskRoot $file)) "create-task missing $file"
   }
   $events = Get-Content -LiteralPath (Join-Path $taskRoot 'events.jsonl') -Raw

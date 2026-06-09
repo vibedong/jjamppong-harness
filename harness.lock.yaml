@@ -1,0 +1,13 @@
+harness:
+  name: jjamppong-harness
+  version: 0.1.1
+installer:
+  package: "jjamppong-harness"
+  version: 0.1.1
+installed_at: "source-template"
+installed_from: source_repository
+planning_started: false
+github_repo_created: false
+commit_created: false
+push_performed: false
+managed_files: []

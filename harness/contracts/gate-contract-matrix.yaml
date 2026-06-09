@@ -164,6 +164,16 @@ gates:
     transition_to: [compound_review, archive]
     verify_ids: [T039]
 
+  compound_review:
+    user_label: 배운 점 장기반영 검토
+    previous: [compound_capture]
+    reads: [learning_capture, compound_state, solutions_index]
+    writes: [compound-review.md, events.jsonl]
+    required_artifacts: [compound_review_decision]
+    forbidden: [silent_solution_promotion, raw_transcript_storage]
+    transition_to: [archive, proposal]
+    verify_ids: [T042]
+
   proposal:
     user_label: 개선 제안
     previous: [compound_review_or_user_request]

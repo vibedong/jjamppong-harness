@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const REQUIRED_ROOT_ITEMS = [
   'AGENTS.md',
@@ -24,6 +25,8 @@ const REQUIRED_CONTRACTS = [
   'harness/contracts/path-policy.schema.yaml',
   'harness/contracts/task.schema.yaml',
   'harness/contracts/installer-contract.yaml',
+  'harness/contracts/artifact-registry.yaml',
+  'harness/contracts/skill-artifact-map.yaml',
 ];
 
 const REQUIRED_LOCK_FIELDS = [
@@ -93,6 +96,175 @@ function listDirectories(dirPath) {
   return fs.readdirSync(dirPath, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
 
+function parseContractSections(text, sectionName) {
+  const result = {};
+  const lines = text.split(/\r?\n/);
+  let inSection = false;
+  let currentKey = null;
+  let currentList = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index];
+    const withoutComment = rawLine.replace(/\s+#.*$/, '');
+    if (!withoutComment.trim()) continue;
+    const indent = withoutComment.match(/^\s*/)[0].length;
+    const trimmed = withoutComment.trim();
+
+    if (indent === 0 && trimmed === `${sectionName}:`) {
+      inSection = true;
+      currentKey = null;
+      currentList = null;
+      continue;
+    }
+
+    if (inSection && indent === 0 && trimmed.endsWith(':')) {
+      break;
+    }
+
+    if (!inSection) continue;
+
+    if (indent === 2 && /^[-A-Za-z0-9_]+:$/.test(trimmed)) {
+      currentKey = trimmed.slice(0, -1);
+      result[currentKey] = {};
+      currentList = null;
+      continue;
+    }
+
+    if (!currentKey) {
+      throw new Error(`Unsupported ${sectionName} contract shape at line ${index + 1}: ${rawLine}`);
+    }
+
+    if (indent === 4 && /^[-A-Za-z0-9_]+:$/.test(trimmed)) {
+      currentList = trimmed.slice(0, -1);
+      result[currentKey][currentList] = [];
+      continue;
+    }
+
+    if (indent === 4 && /^[-A-Za-z0-9_]+:\s+/.test(trimmed)) {
+      const [key, ...rest] = trimmed.split(':');
+      result[currentKey][key] = rest.join(':').trim().replace(/^["']|["']$/g, '');
+      currentList = null;
+      continue;
+    }
+
+    if (indent === 6 && trimmed.startsWith('- ')) {
+      if (!currentList || !Array.isArray(result[currentKey][currentList])) {
+        throw new Error(`List item without list owner at line ${index + 1}: ${rawLine}`);
+      }
+      result[currentKey][currentList].push(trimmed.slice(2).trim().replace(/^["']|["']$/g, ''));
+      continue;
+    }
+
+    throw new Error(`Unsupported ${sectionName} contract shape at line ${index + 1}: ${rawLine}`);
+  }
+
+  return result;
+}
+
+function readArtifactRegistry(root) {
+  return parseContractSections(readText(path.join(root, 'harness', 'contracts', 'artifact-registry.yaml')), 'artifacts');
+}
+
+function readSkillArtifactMap(root) {
+  return parseContractSections(readText(path.join(root, 'harness', 'contracts', 'skill-artifact-map.yaml')), 'gates');
+}
+
+function currentGateFromTaskYaml(taskYaml) {
+  return yamlScalar(taskYaml, 'current_gate');
+}
+
+function normalizeEventPath(value) {
+  return String(value || '').replace(/\\/g, '/');
+}
+
+function artifactRelativePathFor(taskName, artifact) {
+  if (!artifact || !artifact.path) return null;
+  if (artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) return artifact.path;
+  if (artifact.root_relative === 'true' || artifact.root_relative === true) {
+    return normalizeEventPath(artifact.path);
+  }
+  return normalizeEventPath(path.join('harness', 'docs', 'tasks', 'active', taskName, artifact.path));
+}
+
+function artifactAbsolutePathFor(root, taskName, artifact) {
+  const relativePath = artifactRelativePathFor(taskName, artifact);
+  if (!relativePath || relativePath.startsWith('chat:') || relativePath.startsWith('project_source:')) return relativePath;
+  return path.join(root, ...relativePath.split('/'));
+}
+
+function sha256File(filePath) {
+  return `sha256:${crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')}`;
+}
+
+function artifactReadReceipt(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath) {
+  return events.find((event) => {
+    const payload = event.payload || {};
+    if (event.task_id !== taskName) return false;
+    if (event.event_type !== 'artifact_read') return false;
+    if (payload.gate_id !== gateId || payload.artifact_id !== artifactId) return false;
+    if (normalizeEventPath(payload.path) !== expectedRelativePath) return false;
+    if (artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) {
+      return payload.proof_type === 'pseudo_artifact_marker' && typeof payload.hash === 'string' && payload.hash.length > 0;
+    }
+    if (payload.proof_type !== 'file_sha256' || !fs.existsSync(expectedAbsolutePath)) return false;
+    return payload.hash === sha256File(expectedAbsolutePath);
+  });
+}
+
+function artifactWrittenEvent(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath) {
+  if (['events_log', 'active_task_events', 'task_yaml'].includes(artifactId)) {
+    return expectedAbsolutePath && fs.existsSync(expectedAbsolutePath);
+  }
+  return events.find((event) => {
+    const payload = event.payload || {};
+    if (event.task_id !== taskName) return false;
+    if (event.event_type !== 'artifact_written') return false;
+    if (payload.gate_id !== gateId || payload.artifact_id !== artifactId) return false;
+    if (normalizeEventPath(payload.path) !== expectedRelativePath) return false;
+    if (artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) {
+      return typeof payload.hash === 'string' && payload.hash.length > 0;
+    }
+    if (!fs.existsSync(expectedAbsolutePath)) return false;
+    return payload.hash === sha256File(expectedAbsolutePath);
+  });
+}
+
+function eventWritesSolution(event) {
+  const payload = event.payload || {};
+  const writtenPath = String(payload.path || payload.target_path || '');
+  return event.event_type === 'artifact_written'
+    && /^harness[\\/]docs[\\/]solutions[\\/].+\.md$/i.test(writtenPath);
+}
+
+function solutionWritePath(event) {
+  const payload = event.payload || {};
+  return String(payload.path || payload.target_path || '').replace(/\\/g, '/');
+}
+
+function solutionWriteCandidateRef(event) {
+  const payload = event.payload || {};
+  return String(payload.candidate_ref || '');
+}
+
+function hasMatchingCompoundReviewDecision(events, writeIndex, writePath, candidateRef) {
+  return events.slice(0, writeIndex).some((event) => {
+    const payload = event.payload || {};
+    return event.event_type === 'compound_review_decision'
+      && ['promote', 'merge_existing'].includes(payload.decision)
+      && typeof candidateRef === 'string'
+      && candidateRef.length > 0
+      && payload.candidate_ref === candidateRef
+      && typeof payload.user_approval_event_id === 'string'
+      && payload.user_approval_event_id.length > 0
+      && String(payload.target_solution_path || '').replace(/\\/g, '/') === writePath;
+  });
+}
+
+function learningCaptureCandidateCount(text) {
+  const match = text.match(/^candidate_count:\s*(\d+)\s*$/m);
+  return match ? Number(match[1]) : null;
+}
+
 function verifyEventHashChain(events, taskName, failures) {
   for (let i = 0; i < events.length; i += 1) {
     const event = events[i];
@@ -111,6 +283,154 @@ function verifyEventHashChain(events, taskName, failures) {
       });
     }
   }
+}
+
+function verifyArtifactRoutingForTask(root, taskName, taskYaml, events, failures, warnings) {
+  const registryPath = path.join(root, 'harness', 'contracts', 'artifact-registry.yaml');
+  const mapPath = path.join(root, 'harness', 'contracts', 'skill-artifact-map.yaml');
+  if (!fs.existsSync(registryPath) || !fs.existsSync(mapPath)) {
+    failures.push({
+      id: 'missing_contract',
+      severity: 'P0',
+      message: 'Missing artifact routing contract file.',
+    });
+    return;
+  }
+
+  let registry;
+  let gates;
+  try {
+    registry = readArtifactRegistry(root);
+    gates = readSkillArtifactMap(root);
+  } catch (error) {
+    failures.push({
+      id: 'artifact_contract_parse_failed',
+      severity: 'P0',
+      message: `Artifact routing contract parse failed: ${error.message}`,
+    });
+    return;
+  }
+
+  const gateId = currentGateFromTaskYaml(taskYaml);
+  if (!gateId) return;
+  if (!gates[gateId]) {
+    failures.push({
+      id: 'artifact_gate_unknown',
+      severity: 'P0',
+      message: `Task ${taskName} has current_gate ${gateId}, but skill-artifact-map.yaml does not define it.`,
+    });
+    return;
+  }
+
+  const gate = gates[gateId];
+  const requiredReads = Array.isArray(gate.must_read) ? gate.must_read : [];
+  const requiredWrites = Array.isArray(gate.must_write) ? gate.must_write : [];
+  const forbiddenReads = Array.isArray(gate.must_not_read) ? gate.must_not_read : [];
+
+  for (const artifactId of [...requiredReads, ...requiredWrites, ...forbiddenReads]) {
+    if (!registry[artifactId]) {
+      failures.push({
+        id: 'artifact_contract_unknown_artifact',
+        severity: 'P0',
+        message: `Gate ${gateId} references unknown artifact id ${artifactId}.`,
+      });
+    }
+  }
+
+  for (const artifactId of requiredReads) {
+    const artifact = registry[artifactId];
+    if (!artifact) continue;
+    if (artifact.read_receipt_required === 'false' || artifact.read_receipt_required === false) continue;
+    const expectedRelativePath = artifactRelativePathFor(taskName, artifact);
+    const expectedAbsolutePath = artifactAbsolutePathFor(root, taskName, artifact);
+    if (!artifactReadReceipt(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath)) {
+      failures.push({
+        id: 'artifact_read_receipt_missing',
+        severity: ['writing_plan', 'compound_lookup', 'implementation'].includes(gateId) ? 'P0' : 'P1',
+        message: `Task ${taskName} gate ${gateId} is missing a valid artifact_read receipt for ${artifactId}.`,
+      });
+    }
+  }
+
+  for (const artifactId of forbiddenReads) {
+    const forbiddenRead = events.some((event) => {
+      const payload = event.payload || {};
+      return event.task_id === taskName
+        && event.event_type === 'artifact_read'
+        && payload.gate_id === gateId
+        && payload.artifact_id === artifactId;
+    });
+    if (forbiddenRead) {
+      failures.push({
+        id: 'artifact_forbidden_read',
+        severity: 'P0',
+        message: `Task ${taskName} gate ${gateId} read forbidden artifact ${artifactId}.`,
+      });
+    }
+  }
+
+  for (const artifactId of requiredWrites) {
+    const artifact = registry[artifactId];
+    if (!artifact || artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) continue;
+    const expectedRelativePath = artifactRelativePathFor(taskName, artifact);
+    const expectedAbsolutePath = artifactAbsolutePathFor(root, taskName, artifact);
+    if (!artifactWrittenEvent(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath)) {
+      failures.push({
+        id: 'artifact_required_write_missing',
+        severity: ['compound_capture', 'compound_review', 'verification'].includes(gateId) ? 'P0' : 'P1',
+        message: `Task ${taskName} gate ${gateId} is missing a valid artifact_written event for ${artifactId}.`,
+      });
+    }
+  }
+
+  if (gateId === 'compound_capture') {
+    const learningPath = path.join(root, 'harness', 'docs', 'tasks', 'active', taskName, 'learning-capture.md');
+    if (!fs.existsSync(learningPath)) {
+      failures.push({
+        id: 'learning_capture_missing',
+        severity: 'P0',
+        message: `Task ${taskName} is at compound_capture but learning-capture.md is missing.`,
+      });
+    } else {
+      const learningText = readText(learningPath);
+      const candidateCount = learningCaptureCandidateCount(learningText);
+      const learningCandidateEvents = events.filter((event) => event.event_type === 'learning_candidate');
+      if (candidateCount === null) {
+        failures.push({
+          id: 'learning_capture_stale_template',
+          severity: 'P0',
+          message: `Task ${taskName} learning-capture.md is missing candidate_count metadata.`,
+        });
+      } else if (candidateCount === 0 && !/^no_candidate_reason:\s*\S+/m.test(learningText)) {
+        failures.push({
+          id: 'learning_capture_no_candidate_reason_missing',
+          severity: 'P0',
+          message: `Task ${taskName} learning-capture.md has zero candidates without a no_candidate_reason.`,
+        });
+      } else if (candidateCount > learningCandidateEvents.length) {
+        failures.push({
+          id: 'learning_candidate_event_missing',
+          severity: 'P0',
+          message: `Task ${taskName} learning-capture.md candidate_count exceeds learning_candidate events.`,
+        });
+      }
+    }
+  }
+
+  events.forEach((event, index) => {
+    if (!eventWritesSolution(event)) return;
+    const writePath = solutionWritePath(event);
+    const candidateRef = solutionWriteCandidateRef(event);
+    if (!hasMatchingCompoundReviewDecision(events, index, writePath, candidateRef)) {
+      failures.push({
+        id: 'compound_review_required_for_solution_write',
+        severity: 'P0',
+        message: `Task ${taskName} wrote ${writePath} without a prior matching compound_review decision for candidate ${candidateRef || '(missing)'}.`,
+      });
+    }
+  });
+
+  void warnings;
 }
 
 function hasApprovalDecision(events) {
@@ -142,6 +462,7 @@ function verifyActiveTasks(root, failures, warnings) {
 
     if (fs.existsSync(taskYamlPath)) {
       const taskYaml = readText(taskYamlPath);
+      verifyArtifactRoutingForTask(root, task, taskYaml, events, failures, warnings);
       if (/(approved|allowed|permission|capabilit)/i.test(taskYaml) && !hasApprovalDecision(events)) {
         failures.push({
           id: 'projection_without_canonical_event',

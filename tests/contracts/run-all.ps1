@@ -7,6 +7,8 @@ $ErrorActionPreference = 'Stop'
 
 $scripts = @(
   'run-contract-regression.ps1',
+  'test-artifact-routing-contracts.ps1',
+  'test-learning-classifier.ps1',
   'test-permission-decision.ps1',
   'test-verify-doctor.ps1',
   'test-installer-package.ps1',

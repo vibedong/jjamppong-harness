@@ -38,6 +38,13 @@ foreach ($token in @(
   'This phase does not add lifecycle-level localization',
   'handoff.md is a status summary, not the restart prompt container',
   'The next-chat prompt is returned in the chat response',
+  'Artifact Routing',
+  'Read receipts',
+  'compound_lookup reads solution indexes before detailed solution files',
+  'compound_capture records candidates in `learning-capture.md`',
+  'compound_review decides long-term promotion',
+  'learning-capture.md',
+  'compound-review.md',
   'network.live_target',
   'package.install',
   'git.commit',
@@ -74,6 +81,12 @@ foreach ($token in @(
   'folder_skeleton does not create executable files',
   'plan_review does not unlock implementation',
   'doctor --proposal'
+  'Before a gate or skill starts, check `harness/contracts/skill-artifact-map.yaml`',
+  'Do not rely on memory for required artifacts',
+  'Record `artifact_read` events for required artifact reads',
+  'Do not promote learning candidates into `harness/docs/solutions/` without `compound_review`',
+  'compound_capture',
+  'compound_review'
 )) {
   Assert-Check ($rules.Contains($token)) "rules.md missing required token: $token"
 }

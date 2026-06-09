@@ -1,0 +1,167 @@
+version: 0.1.0
+name: jjamppong-harness-skill-artifact-map
+notes:
+  - This file refines gate-contract-matrix.yaml with artifact-level read and write requirements.
+  - Missing or ambiguous artifact receipts fail closed for P0 gates.
+  - It does not grant capability approvals.
+
+gates:
+  install:
+    must_write:
+
+  intake:
+    must_read:
+      - user_prompt
+    must_write:
+      - events_log
+      - task_yaml
+    must_not_read:
+      - project_source_before_approval
+
+  grill:
+    must_read:
+      - user_prompt
+      - prior_user_answers
+    must_write:
+      - planning_grill_summary
+      - events_log
+    must_not_read:
+      - project_source_before_approval
+
+  research:
+    must_read:
+      - planning_grill_summary
+    must_write:
+      - planning_research_summary
+      - events_log
+
+  compound_lookup:
+    must_read:
+      - compound_state
+      - solutions_index
+    optional_read:
+      - selected_relevant_solutions
+    must_write:
+      - planning_compound_lookup
+
+  architecture_orientation:
+    must_read:
+      - planning_grill_summary
+      - planning_research_summary
+    must_write:
+      - planning_architecture_orientation
+
+  prd:
+    must_read:
+      - planning_grill_summary
+      - planning_research_summary
+    optional_read:
+      - planning_compound_lookup
+      - planning_architecture_orientation
+    must_write:
+      - planning_prd
+
+  issues:
+    must_read:
+      - planning_prd
+    must_write:
+      - planning_issues
+
+  module_structure:
+    must_read:
+      - planning_prd
+      - planning_issues
+    must_write:
+      - planning_module_structure
+
+  writing_plan:
+    must_read:
+      - planning_current_context
+      - planning_prd
+      - planning_issues
+      - planning_module_structure
+    must_write:
+      - planning_writing_plan
+
+  plan_review:
+    must_read:
+      - planning_writing_plan
+    must_write:
+      - planning_plan_review
+
+  folder_skeleton:
+    must_read:
+      - planning_module_structure
+    must_write:
+      - events_log
+
+  implementation:
+    must_read:
+      - planning_prd
+      - planning_issues
+      - planning_module_structure
+      - planning_writing_plan
+      - planning_plan_review
+      - events_log
+    must_write:
+      - events_log
+
+  work:
+    must_read:
+      - events_log
+    must_write:
+      - events_log
+
+  verification:
+    must_read:
+      - events_log
+    must_write:
+      - verification
+
+  acceptance:
+    must_read:
+      - verification
+    must_write:
+      - acceptance
+
+  compound_capture:
+    must_read:
+      - verification
+      - active_task_events
+    optional_read:
+      - acceptance
+    must_write:
+      - learning_capture
+
+  compound_review:
+    must_read:
+      - learning_capture
+      - compound_state
+      - solutions_index
+    must_write:
+      - compound_review
+    may_write_long_term:
+      - solutions_index
+      - selected_relevant_solutions
+      - compound_state
+
+  proposal:
+    must_read:
+      - active_task_events
+    must_write:
+      - events_log
+
+  archive:
+    must_read:
+      - verification
+      - learning_capture
+    optional_read:
+      - compound_review
+    must_write:
+      - events_log
+
+  handoff:
+    must_read:
+      - active_task_events
+    must_write:
+      - handoff_summary

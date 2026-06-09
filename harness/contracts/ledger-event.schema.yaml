@@ -24,8 +24,12 @@ fields:
       - gate_question
       - user_answer
       - approval_decision
+      - artifact_read
       - gate_status_change
       - artifact_written
+      - learning_candidate
+      - user_correction
+      - compound_review_decision
       - permission_decision
       - capability_used
       - verification_result
@@ -66,6 +70,47 @@ payload_schemas:
       target_paths: {type: object}
       still_forbidden: {type: array}
       invalidates_on: {type: array}
+  artifact_read:
+    required: [gate_id, artifact_id, path, hash, proof_type]
+    fields:
+      gate_id: {type: string}
+      artifact_id: {type: string}
+      path: {type: string}
+      hash: {type: string}
+      proof_type: {enum: [file_sha256, pseudo_artifact_marker]}
+  artifact_written:
+    required: [gate_id, artifact_id, path, hash]
+    fields:
+      gate_id: {type: string}
+      artifact_id: {type: string}
+      path: {type: string}
+      hash: {type: string}
+      candidate_ref: {type: string, required: false}
+  learning_candidate:
+    required: [candidate_ref, category, summary, evidence, recurrence_prevention]
+    fields:
+      candidate_ref: {type: string}
+      category: {type: string}
+      summary: {type: string}
+      evidence: {type: string}
+      recurrence_prevention: {type: string}
+      promotion_recommendation: {enum: [promote, keep_active_only, merge_existing, discard]}
+  user_correction:
+    required: [category, summary, correction_quote, recurrence_prevention, source_event_id]
+    fields:
+      category: {type: string}
+      summary: {type: string}
+      correction_quote: {type: string}
+      recurrence_prevention: {type: string}
+      source_event_id: {type: string}
+  compound_review_decision:
+    required: [candidate_ref, decision, reason, user_approval_event_id]
+    fields:
+      candidate_ref: {type: string}
+      decision: {enum: [promote, keep_active_only, merge_existing, discard]}
+      reason: {type: string}
+      target_solution_path: {type: string}
+      user_approval_event_id: {type: string}
   permission_decision:
     required: [decision_id, capability, decision, reason, based_on_events]
     fields:

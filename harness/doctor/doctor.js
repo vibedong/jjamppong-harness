@@ -37,6 +37,17 @@ function nextActionFor(failure) {
     projection_without_canonical_event: 'Regenerate projections from events.jsonl or ask the user for explicit approval again.',
     event_hash_chain_broken: 'Stop using this task state until the event log is audited; do not invent missing approvals.',
     event_required_fields: 'Repair event log only from trusted source events.',
+    artifact_contract_parse_failed: 'Fix artifact-registry.yaml or skill-artifact-map.yaml; malformed routing contracts fail closed.',
+    artifact_gate_unknown: 'Add the current gate to skill-artifact-map.yaml or correct task.yaml current_gate.',
+    artifact_contract_unknown_artifact: 'Define the artifact in artifact-registry.yaml or remove the bad reference from skill-artifact-map.yaml.',
+    artifact_read_receipt_missing: 'Read the required artifact, resolve its registry path, compute SHA-256 for file-backed artifacts, and append artifact_read with gate_id, artifact_id, path, hash, and proof_type.',
+    artifact_forbidden_read: 'Stop the task and create a repair proposal; the current gate read a forbidden artifact.',
+    artifact_required_write_missing: 'Create the required gate output artifact and append artifact_written with gate_id, artifact_id, repo-relative path, and file hash, or move the task back to the previous gate.',
+    learning_capture_missing: 'Run lifecycle capture-learning before compound_capture finishes.',
+    learning_capture_stale_template: 'Regenerate learning-capture.md from structured evidence; the starter template is not a valid capture result.',
+    learning_capture_no_candidate_reason_missing: 'Add a no_candidate_reason with source hashes when candidate_count is 0.',
+    learning_candidate_event_missing: 'Append learning_candidate events matching learning-capture.md candidate_count.',
+    compound_review_required_for_solution_write: 'Revert the long-term solution write or add a prior matching compound_review_decision with candidate_ref, target_solution_path, decision, reason, and user_approval_event_id.',
   };
   return table[failure.id] || 'Create a proposal explaining the required safe repair.';
 }

@@ -58,6 +58,41 @@ active task task.yaml, if one exists
 
 If required files are missing or contradictory, stop and run verify/doctor.
 
+## Artifact Routing Rules
+
+Before a gate or skill starts, check harness/contracts/skill-artifact-map.yaml.
+
+Before a gate or skill starts, check `harness/contracts/skill-artifact-map.yaml`.
+
+Do not rely on memory for required artifacts.
+
+Record artifact_read events for required artifact reads.
+
+Record `artifact_read` events for required artifact reads.
+
+The `artifact_read` event payload must include:
+
+```text
+gate_id
+artifact_id
+path
+hash
+```
+
+If a required artifact is missing, stop at the current gate and explain the missing artifact.
+
+If a required read receipt is missing, verification fails.
+
+Do not promote learning candidates into harness/docs/solutions without compound_review.
+
+Do not promote learning candidates into `harness/docs/solutions/` without `compound_review`.
+
+`compound_capture` writes candidates to `learning-capture.md`.
+
+`compound_review` decides whether each candidate is promoted, kept active-only, merged into an existing solution, or discarded.
+
+Long-term solution files are read through `harness/state/compound.md` and `harness/docs/solutions/index.md` first. Read detailed solution files only when relevant.
+
 ## Red Lines
 
 Stop immediately if a step would require:

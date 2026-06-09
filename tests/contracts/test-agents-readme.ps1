@@ -23,6 +23,8 @@ Assert-Check ($agentsLines -le 110) "AGENTS.md should stay short; found $agentsL
 
 foreach ($token in @(
   'harness/contracts/gate-contract-matrix.yaml',
+  'harness/contracts/artifact-registry.yaml',
+  'harness/contracts/skill-artifact-map.yaml',
   'harness/contracts/capability-catalog.yaml',
   'harness/contracts/task.schema.yaml',
   'harness/contracts/permission-decision.schema.yaml',
@@ -59,6 +61,7 @@ foreach ($token in @(
   'This phase does not add lifecycle-level localization',
   'git commit',
   'git push'
+  'artifact_read'
 )) {
   Assert-Check ($agents.Contains($token)) "AGENTS.md missing hard-rule token: $token"
 }
@@ -102,6 +105,13 @@ foreach ($token in @(
   'task.yaml은 현재 상태를 빠르게 읽는 요약 파일입니다',
   'handoff.md는 새 채팅으로 넘길 상태 요약입니다',
   'handoff.md를 만든 뒤에는 다음 채팅에 붙여넣을 프롬프트를 채팅 응답으로 출력합니다',
+  '자동으로 배운 점을 남기는 방식',
+  'learning-capture.md',
+  'compound-review.md',
+  'harness/docs/solutions/',
+  '필요한 문서를 읽었는지 확인하는 방식',
+  'artifact_read',
+  '실제 읽은 흔적을 남기게 하는 구조입니다',
   'Gate id: planning',
   'Gate id: implementation',
   'Gate id: handoff',

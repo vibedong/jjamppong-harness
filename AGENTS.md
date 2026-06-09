@@ -12,6 +12,8 @@ For any substantive task, read these first:
 
 ```text
 harness/contracts/gate-contract-matrix.yaml
+harness/contracts/artifact-registry.yaml
+harness/contracts/skill-artifact-map.yaml
 harness/contracts/capability-catalog.yaml
 harness/contracts/task.schema.yaml
 harness/contracts/permission-decision.schema.yaml
@@ -57,6 +59,7 @@ This file may restrict behavior further, but it must not grant permission beyond
 - Package install, live target access, commit, and push each need separate explicit capability approval.
 - Harness-core changes in product tasks must become proposals, not live edits.
 - Doctor/update/repair are proposal-only by default for modified managed files.
+- Before running a gate or skill, check `harness/contracts/skill-artifact-map.yaml` for required artifacts and record valid `artifact_read` events for file-backed reads.
 - Root `handoff.md` changes only when the user asks for handoff.
 
 ## User Language

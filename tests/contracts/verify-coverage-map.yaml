@@ -63,7 +63,11 @@ coverage:
       - compiled_context_hashes
       - acceptance_status
   compound_contract:
-    tests: [T039, T040]
+    tests: [T039, T040, T041, T042, T043, T044]
     verify_checks:
       - compound_proposal_only_for_rule_change
       - compound_lookup_limited_body_reads
+      - artifact_routing_contract
+      - artifact_read_receipts
+      - compound_review_promotion_gate
+      - learning_capture_template

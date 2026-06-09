@@ -1,0 +1,237 @@
+version: 0.1.0
+name: jjamppong-harness-artifact-registry
+notes:
+  - Artifacts describe durable planning, permission, verification, and compound surfaces.
+  - Human-facing artifacts use the current user's language.
+  - Machine-readable artifacts keep stable schema keys.
+  - Dynamic task paths are relative to harness/docs/tasks/active/{task_id}/ unless root_relative is true.
+
+artifacts:
+  user_prompt:
+    path: chat:user_prompt
+    audience: human
+    language: user
+    lifecycle: conversation
+    purpose: User's current request.
+    canonical: true
+    read_receipt_required: true
+
+  prior_user_answers:
+    path: chat:prior_user_answers
+    audience: human
+    language: user
+    lifecycle: conversation
+    purpose: User answers collected during the current gate.
+    canonical: true
+    read_receipt_required: true
+
+  events_log:
+    path: events.jsonl
+    audience: machine
+    language: stable_schema
+    lifecycle: active_task
+    purpose: Canonical gate, approval, permission, artifact, and verification event log.
+    canonical: true
+    read_receipt_required: false
+
+  active_task_events:
+    path: events.jsonl
+    audience: machine
+    language: stable_schema
+    lifecycle: active_task
+    purpose: Canonical event history for the active task.
+    canonical: true
+    read_receipt_required: false
+
+  task_yaml:
+    path: task.yaml
+    audience: machine
+    language: stable_schema
+    lifecycle: active_task
+    purpose: Derived cache projection of current task status.
+    canonical: false
+    read_receipt_required: false
+
+  gate_ledger:
+    path: gate-ledger.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Human-readable projection of approvals and gate state.
+    canonical: false
+    read_receipt_required: false
+
+  planning_current_context:
+    path: planning/00-current-planning-context.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Compiled planning context with source hashes.
+    canonical: false
+    read_receipt_required: true
+
+  planning_grill_summary:
+    path: planning/01-grill-summary.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Summary of user intent questions and answers.
+    canonical: false
+    read_receipt_required: true
+
+  planning_research_summary:
+    path: planning/02-research-summary.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Evidence and research summary.
+    canonical: false
+    read_receipt_required: true
+
+  planning_compound_lookup:
+    path: planning/02b-compound-lookup.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Relevant previous learning selected for the current task.
+    canonical: false
+    read_receipt_required: true
+
+  planning_architecture_orientation:
+    path: planning/02c-architecture-orientation.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Plain-language technical orientation.
+    canonical: false
+    read_receipt_required: true
+
+  planning_prd:
+    path: planning/03-prd.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Approved product requirements.
+    canonical: false
+    read_receipt_required: true
+
+  planning_issues:
+    path: planning/04-issues.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Work breakdown from the approved PRD.
+    canonical: false
+    read_receipt_required: true
+
+  planning_module_structure:
+    path: planning/05-module-structure.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Approved module and folder structure.
+    canonical: false
+    read_receipt_required: true
+
+  planning_writing_plan:
+    path: planning/06-writing-plan.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Implementation plan.
+    canonical: false
+    read_receipt_required: true
+
+  planning_plan_review:
+    path: planning/07-plan-review.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Review of the implementation plan.
+    canonical: false
+    read_receipt_required: true
+
+  verification:
+    path: verification.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Verification commands, expected results, actual results, and risk status.
+    canonical: false
+    read_receipt_required: true
+
+  acceptance:
+    path: acceptance.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: User acceptance, deferral, or blocked status.
+    canonical: false
+    read_receipt_required: true
+
+  learning_capture:
+    path: learning-capture.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Candidate reusable lessons classified during the task.
+    canonical: false
+    read_receipt_required: true
+
+  compound_review:
+    path: compound-review.md
+    audience: human
+    language: user
+    lifecycle: active_task
+    purpose: Review decision for promoting learning candidates into long-term solutions.
+    canonical: false
+    read_receipt_required: true
+
+  compound_state:
+    path: harness/state/compound.md
+    root_relative: true
+    audience: human
+    language: user
+    lifecycle: long_term
+    purpose: Short index of reusable learning documents.
+    canonical: false
+    read_receipt_required: true
+
+  solutions_index:
+    path: harness/docs/solutions/index.md
+    root_relative: true
+    audience: human
+    language: user
+    lifecycle: long_term
+    purpose: Long-term solution index.
+    canonical: false
+    read_receipt_required: true
+
+  selected_relevant_solutions:
+    path: harness/docs/solutions/*.md
+    root_relative: true
+    audience: human
+    language: user
+    lifecycle: long_term
+    purpose: Narrowly selected solution summaries relevant to the current task.
+    canonical: false
+    read_receipt_required: true
+
+  handoff_summary:
+    path: handoff.md
+    root_relative: true
+    audience: human
+    language: user
+    lifecycle: project
+    purpose: Next-chat handoff summary and restart prompt.
+    canonical: false
+    read_receipt_required: true
+
+  project_source_before_approval:
+    path: project_source:before_grill_or_approval
+    audience: machine
+    language: stable_schema
+    lifecycle: project
+    purpose: Forbidden early project-source read before the planning gate allows it.
+    canonical: false
+    read_receipt_required: false

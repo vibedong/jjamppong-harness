@@ -5,12 +5,16 @@ This manifest describes the release candidate source surfaces for Jjamppong Harn
 ## Canonical Surfaces
 
 - `harness/contracts/`: machine-readable gate, permission, path, installer, and task contracts.
+- `harness/contracts/artifact-registry.yaml`: artifact role, language, lifecycle, and receipt policy.
+- `harness/contracts/skill-artifact-map.yaml`: gate-to-artifact read/write routing contract.
 - `tests/contracts/`: regression tests that prove the contracts stay enforced.
 - `harness/permission/`: PermissionDecision MVP.
 - `harness/verify/`: installed-project verifier.
 - `harness/doctor/`: read-only diagnosis and proposal generator.
+- `harness/lifecycle/learning-classifier.js`: structured evidence classifier for compound learning candidates.
 - `harness/installer/` and `bin/`: npm/npx installer and CLI entry points.
 - `harness/templates/`: task and module artifact templates.
+- `harness/docs/solutions/`: long-term compound learning summaries read through indexes before detailed bodies.
 - `harness/rules/`: human-readable projections of the contracts.
 - `AGENTS.md`: short runtime instruction entry point.
 - `README.md`: Korean human guide.
