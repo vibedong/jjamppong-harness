@@ -1,4 +1,4 @@
-version: 0.1.0
+version: 0.2.0
 name: permission-decision-schema
 
 required_fields:
@@ -45,15 +45,28 @@ capability_examples:
 
 based_on:
   required:
-    - canonical_event_log_hash
-    - relevant_event_ids
-    - artifact_hashes
+    - current_gate
+    - task_yaml_approval_summary
+    - implementation_approval_headings
     - contract_versions
   fields:
-    canonical_event_log_hash: string
-    relevant_event_ids: array
-    artifact_hashes: object
+    current_gate: string
+    task_yaml_approval_summary: object
+    implementation_approval_headings: array
     contract_versions: object
+
+approval_summary:
+  implementation_values: [locked, approved, revoked]
+  dangerous_capabilities_require:
+    - implementation: approved
+    - allowed_capabilities match
+    - allowed_paths match for file writes
+    - implementation-approval.md required headings
+  boolean_capability_fields:
+    package.install: package_install
+    network.live_target: network_live_target
+    git.commit: git_commit
+    git.push: git_push
 
 path_policy_result:
   required_when: path_present
@@ -79,16 +92,15 @@ required_next_action:
 
 invalidation:
   approval_must_bind_to:
-    - gate_question_event_id
-    - user_answer_event_id
+    - current_gate
     - target_paths
     - capability_flags
-    - artifact_hashes
+    - explicit_user_approval_in_current_chat
   invalidates_when:
-    - prd_hash_changed
-    - issues_hash_changed
-    - module_structure_hash_changed
-    - writing_plan_hash_changed
+    - prd_changed
+    - issues_changed
+    - module_structure_changed
+    - writing_plan_changed
     - target_paths_changed
     - capability_need_added
     - user_added_new_constraint

@@ -19,6 +19,16 @@ function Assert-Check {
   }
 }
 
+function Copy-IfExists {
+  param([string]$RelativePath, [string]$Root)
+  $source = Join-Path $RepoRoot $RelativePath
+  if (Test-Path -LiteralPath $source) {
+    $target = Join-Path $Root $RelativePath
+    New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
+    Copy-Item -LiteralPath $source -Destination $target -Recurse -Force
+  }
+}
+
 function New-FixtureRoot {
   $root = Join-Path ([IO.Path]::GetTempPath()) ('jjamppong-verify-test-' + [guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $root | Out-Null
@@ -28,7 +38,9 @@ function New-FixtureRoot {
   foreach ($dir in @('harness', 'modules', 'module-template', 'proposals', 'harness\docs\tasks\active', 'harness\docs\tasks\archive')) {
     New-Item -ItemType Directory -Path (Join-Path $root $dir) -Force | Out-Null
   }
-  Copy-Item -LiteralPath (Join-Path $RepoRoot 'harness\contracts') -Destination (Join-Path $root 'harness\contracts') -Recurse
+  Copy-IfExists -RelativePath 'harness\contracts' -Root $root
+  Copy-IfExists -RelativePath 'harness\templates' -Root $root
+  Copy-IfExists -RelativePath 'harness\rules' -Root $root
   Set-Content -LiteralPath (Join-Path $root 'harness.lock.yaml') -Value @(
     'harness:',
     '  name: jjamppong-harness',
@@ -61,55 +73,47 @@ function Invoke-DoctorJson {
   return ($output -join "`n") | ConvertFrom-Json
 }
 
-function New-Event {
+function New-ActiveTask {
   param(
-    [string]$TaskId,
-    [string]$EventId,
-    [string]$EventType,
-    [string]$PreviousHash,
-    [string]$EventHash,
-    [object]$Payload
+    [string]$Root,
+    [string]$Slug = 'task-one',
+    [string]$Gate = 'intake',
+    [string[]]$ExtraTaskYaml = @()
   )
-  return [ordered]@{
-    event_id = $EventId
-    schema_version = '0.1.0'
-    task_id = $TaskId
-    event_type = $EventType
-    created_at = '2026-06-09T00:00:00+09:00'
-    actor_type = 'assistant'
-    previous_hash = $PreviousHash
-    event_hash = $EventHash
-    payload = $Payload
-  } | ConvertTo-Json -Compress
+
+  $taskDir = Join-Path $Root "harness\docs\tasks\active\$Slug"
+  New-Item -ItemType Directory -Path (Join-Path $taskDir 'planning') -Force | Out-Null
+  $lines = @(
+    "task_id: $Slug",
+    'task_type: product_feature',
+    'status: active',
+    "current_gate: $Gate",
+    'approval_summary:',
+    '  implementation: locked',
+    '  allowed_capabilities: []',
+    '  allowed_paths: []',
+    '  package_install: false',
+    '  network_live_target: false',
+    '  git_commit: false',
+    '  git_push: false'
+  ) + $ExtraTaskYaml
+  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value $lines -Encoding UTF8
+  return $taskDir
 }
 
-function Write-Events {
-  param([string]$Path, [string[]]$Events)
-  Set-Content -LiteralPath $Path -Value ($Events -join "`n") -Encoding UTF8
-}
-
-function Get-TestFileSha256 {
-  param([string]$Path)
-  $stream = [System.IO.File]::OpenRead($Path)
-  try {
-    $sha = [System.Security.Cryptography.SHA256]::Create()
-    try {
-      $hash = $sha.ComputeHash($stream)
-      return "sha256:$(([System.BitConverter]::ToString($hash) -replace '-', '').ToLowerInvariant())"
-    }
-    finally {
-      $sha.Dispose()
-    }
-  }
-  finally {
-    $stream.Dispose()
+function Assert-HasIssueId {
+  param([object]$Result, [string]$Id, [string]$Message, [string]$Kind = 'failure')
+  $script:checks += 1
+  $items = if ($Kind -eq 'warning') { @($Result.warnings) } else { @($Result.failures) }
+  if (@($items | Where-Object { $_.id -eq $Id }).Count -lt 1) {
+    $script:failures.Add($Message)
   }
 }
 
 $passRoot = New-FixtureRoot
 try {
   $pass = Invoke-VerifyJson -Root $passRoot
-  Assert-Check ($pass.ok -eq $true) "verify should pass a minimal install fixture: $($pass.failures | ConvertTo-Json -Compress)"
+  Assert-Check ($pass.ok -eq $true) "verify should pass a minimal ledgerless install fixture: $($pass.failures | ConvertTo-Json -Compress)"
 }
 finally {
   Remove-Item -LiteralPath $passRoot -Recurse -Force
@@ -121,7 +125,7 @@ try {
   Set-Content -LiteralPath (Join-Path $nestedRoot 'jjamppong-harness\AGENTS.md') -Value 'nested' -Encoding UTF8
   $nested = Invoke-VerifyJson -Root $nestedRoot
   Assert-Check ($nested.ok -eq $false) 'verify should fail forbidden nested harness folder.'
-  Assert-Check (@($nested.failures | Where-Object { $_.id -eq 'nested_harness_folder' }).Count -eq 1) 'nested harness failure id should be reported.'
+  Assert-HasIssueId -Result $nested -Id 'nested_harness_folder' -Message 'nested harness failure id should be reported.'
 }
 finally {
   Remove-Item -LiteralPath $nestedRoot -Recurse -Force
@@ -129,242 +133,118 @@ finally {
 
 $activeRoot = New-FixtureRoot
 try {
-  New-Item -ItemType Directory -Path (Join-Path $activeRoot 'harness\docs\tasks\active\task-one') | Out-Null
-  New-Item -ItemType Directory -Path (Join-Path $activeRoot 'harness\docs\tasks\active\task-two') | Out-Null
+  New-ActiveTask -Root $activeRoot -Slug 'task-one' | Out-Null
+  New-ActiveTask -Root $activeRoot -Slug 'task-two' | Out-Null
   $active = Invoke-VerifyJson -Root $activeRoot
   Assert-Check ($active.ok -eq $false) 'verify should fail multiple active tasks by default.'
-  Assert-Check (@($active.failures | Where-Object { $_.id -eq 'active_task_single_default' }).Count -eq 1) 'multiple active tasks failure id should be reported.'
+  Assert-HasIssueId -Result $active -Id 'active_task_single_default' -Message 'multiple active tasks failure id should be reported.'
 }
 finally {
   Remove-Item -LiteralPath $activeRoot -Recurse -Force
 }
 
-$projectionRoot = New-FixtureRoot
+$legacyRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $projectionRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @('task_id: task-one', 'approved: true', 'capability: file.write.module') -Encoding UTF8
+  $taskDir = New-ActiveTask -Root $legacyRoot -Gate 'research'
   Set-Content -LiteralPath (Join-Path $taskDir 'events.jsonl') -Value '' -Encoding UTF8
-  $projection = Invoke-VerifyJson -Root $projectionRoot
-  Assert-Check ($projection.ok -eq $false) 'verify should fail task.yaml permission without canonical event.'
-  Assert-Check (@($projection.failures | Where-Object { $_.id -eq 'projection_without_canonical_event' }).Count -eq 1) 'projection drift failure id should be reported.'
+  Set-Content -LiteralPath (Join-Path $taskDir 'gate-ledger.md') -Value '# 승인 기록' -Encoding UTF8
+  $legacy = Invoke-VerifyJson -Root $legacyRoot
+  Assert-HasIssueId -Result $legacy -Id 'legacy_ledger_artifact_present' -Kind 'warning' -Message 'legacy active task ledger files should be warnings, not P0 failures.'
+  Assert-Check (@($legacy.failures | Where-Object { $_.id -eq 'projection_without_canonical_event' -or $_.id -eq 'event_hash_chain_broken' }).Count -eq 0) 'legacy ledger files must not trigger canonical event/hash failures.'
 }
 finally {
-  Remove-Item -LiteralPath $projectionRoot -Recurse -Force
+  Remove-Item -LiteralPath $legacyRoot -Recurse -Force
 }
 
-$writingPlanMissingReceiptRoot = New-FixtureRoot
+$unknownGateRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $writingPlanMissingReceiptRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: product_feature',
-    'status: active',
-    'current_gate: writing_plan'
-  ) -Encoding UTF8
-  Set-Content -LiteralPath (Join-Path $taskDir 'events.jsonl') -Value '' -Encoding UTF8
-  $result = Invoke-VerifyJson -Root $writingPlanMissingReceiptRoot
-  Assert-Check ($result.ok -eq $false) 'writing_plan should fail without required artifact read receipts.'
-  Assert-Check (@($result.failures | Where-Object { $_.id -eq 'artifact_read_receipt_missing' }).Count -ge 3) 'writing_plan should report missing PRD, issues, and module structure receipts.'
+  New-ActiveTask -Root $unknownGateRoot -Gate 'made_up_gate' | Out-Null
+  $unknownGate = Invoke-VerifyJson -Root $unknownGateRoot
+  Assert-Check ($unknownGate.ok -eq $false) 'verify should fail unknown current_gate.'
+  Assert-HasIssueId -Result $unknownGate -Id 'task_gate_unknown' -Message 'unknown gate failure id should be reported.'
 }
 finally {
-  Remove-Item -LiteralPath $writingPlanMissingReceiptRoot -Recurse -Force
+  Remove-Item -LiteralPath $unknownGateRoot -Recurse -Force
 }
 
-$writingPlanReceiptRoot = New-FixtureRoot
+$writingPlanMissingRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $writingPlanReceiptRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path (Join-Path $taskDir 'planning') -Force | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: product_feature',
-    'status: active',
-    'current_gate: writing_plan'
-  ) -Encoding UTF8
-  $contextPath = Join-Path $taskDir 'planning\00-current-planning-context.md'
-  $prdPath = Join-Path $taskDir 'planning\03-prd.md'
-  $issuesPath = Join-Path $taskDir 'planning\04-issues.md'
-  $modulePath = Join-Path $taskDir 'planning\05-module-structure.md'
-  $writingPath = Join-Path $taskDir 'planning\06-writing-plan.md'
-  $contextRel = 'harness/docs/tasks/active/task-one/planning/00-current-planning-context.md'
-  $prdRel = 'harness/docs/tasks/active/task-one/planning/03-prd.md'
-  $issuesRel = 'harness/docs/tasks/active/task-one/planning/04-issues.md'
-  $moduleRel = 'harness/docs/tasks/active/task-one/planning/05-module-structure.md'
-  $writingRel = 'harness/docs/tasks/active/task-one/planning/06-writing-plan.md'
-  Set-Content -LiteralPath $contextPath -Value 'context' -Encoding UTF8
-  Set-Content -LiteralPath $prdPath -Value 'prd' -Encoding UTF8
-  Set-Content -LiteralPath $issuesPath -Value 'issues' -Encoding UTF8
-  Set-Content -LiteralPath $modulePath -Value 'module' -Encoding UTF8
-  Set-Content -LiteralPath $writingPath -Value 'writing plan' -Encoding UTF8
-  $eventsPath = Join-Path $taskDir 'events.jsonl'
-  $events = @(
-    (New-Event -TaskId 'task-one' -EventId 'evt-1' -EventType 'artifact_read' -PreviousHash '' -EventHash 'h1' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_current_context'; path = $contextRel; hash = (Get-TestFileSha256 -Path $contextPath); proof_type = 'file_sha256' }),
-    (New-Event -TaskId 'task-one' -EventId 'evt-2' -EventType 'artifact_read' -PreviousHash 'h1' -EventHash 'h2' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_prd'; path = $prdRel; hash = (Get-TestFileSha256 -Path $prdPath); proof_type = 'file_sha256' }),
-    (New-Event -TaskId 'task-one' -EventId 'evt-3' -EventType 'artifact_read' -PreviousHash 'h2' -EventHash 'h3' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_issues'; path = $issuesRel; hash = (Get-TestFileSha256 -Path $issuesPath); proof_type = 'file_sha256' }),
-    (New-Event -TaskId 'task-one' -EventId 'evt-4' -EventType 'artifact_read' -PreviousHash 'h3' -EventHash 'h4' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_module_structure'; path = $moduleRel; hash = (Get-TestFileSha256 -Path $modulePath); proof_type = 'file_sha256' }),
-    (New-Event -TaskId 'task-one' -EventId 'evt-5' -EventType 'artifact_written' -PreviousHash 'h4' -EventHash 'h5' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_writing_plan'; path = $writingRel; hash = (Get-TestFileSha256 -Path $writingPath) })
-  )
-  Write-Events -Path $eventsPath -Events $events
-  $result = Invoke-VerifyJson -Root $writingPlanReceiptRoot
-  Assert-Check ($result.ok -eq $true) "writing_plan should pass when required receipts exist: $($result.failures | ConvertTo-Json -Compress)"
+  New-ActiveTask -Root $writingPlanMissingRoot -Gate 'writing_plan' | Out-Null
+  $result = Invoke-VerifyJson -Root $writingPlanMissingRoot
+  Assert-Check ($result.ok -eq $false) 'writing_plan should fail without required planning artifacts.'
+  Assert-HasIssueId -Result $result -Id 'gate_required_artifact_missing' -Message 'writing_plan should report missing PRD/issues/module structure artifacts.'
 }
 finally {
-  Remove-Item -LiteralPath $writingPlanReceiptRoot -Recurse -Force
+  Remove-Item -LiteralPath $writingPlanMissingRoot -Recurse -Force
 }
 
-$compoundLookupMissingRoot = New-FixtureRoot
+$writingPlanStaleRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $compoundLookupMissingRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: product_feature',
-    'status: active',
-    'current_gate: compound_lookup'
-  ) -Encoding UTF8
-  Set-Content -LiteralPath (Join-Path $taskDir 'events.jsonl') -Value '' -Encoding UTF8
-  $result = Invoke-VerifyJson -Root $compoundLookupMissingRoot
-  Assert-Check ($result.ok -eq $false) 'compound_lookup should fail without compound_state and solutions_index receipts.'
-  Assert-Check (@($result.failures | Where-Object { $_.id -eq 'artifact_read_receipt_missing' }).Count -ge 2) 'compound_lookup should report missing compound receipts.'
+  $taskDir = New-ActiveTask -Root $writingPlanStaleRoot -Gate 'writing_plan'
+  Set-Content -LiteralPath (Join-Path $taskDir 'planning\03-prd.md') -Value '# PRD' -Encoding UTF8
+  Set-Content -LiteralPath (Join-Path $taskDir 'planning\04-issues.md') -Value '# 이슈' -Encoding UTF8
+  Set-Content -LiteralPath (Join-Path $taskDir 'planning\05-module-structure.md') -Value '# 모듈 구조' -Encoding UTF8
+  Set-Content -LiteralPath (Join-Path $taskDir 'planning\06-writing-plan.md') -Value '# Writing Plan' -Encoding UTF8
+  $result = Invoke-VerifyJson -Root $writingPlanStaleRoot
+  Assert-Check ($result.ok -eq $false) 'writing_plan should fail when artifacts contain only starter text.'
+  Assert-HasIssueId -Result $result -Id 'gate_artifact_content_insufficient' -Message 'writing_plan should report insufficient artifact content.'
 }
 finally {
-  Remove-Item -LiteralPath $compoundLookupMissingRoot -Recurse -Force
+  Remove-Item -LiteralPath $writingPlanStaleRoot -Recurse -Force
+}
+
+$implementationMissingRoot = New-FixtureRoot
+try {
+  New-ActiveTask -Root $implementationMissingRoot -Gate 'implementation' | Out-Null
+  $result = Invoke-VerifyJson -Root $implementationMissingRoot
+  Assert-Check ($result.ok -eq $false) 'implementation gate should fail without implementation-approval.md.'
+  Assert-HasIssueId -Result $result -Id 'implementation_approval_missing' -Message 'implementation approval missing failure id should be reported.'
+}
+finally {
+  Remove-Item -LiteralPath $implementationMissingRoot -Recurse -Force
 }
 
 $solutionWriteBlockedRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $solutionWriteBlockedRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: knowledge_maintenance',
-    'status: active',
-    'current_gate: compound_capture'
+  $taskDir = New-ActiveTask -Root $solutionWriteBlockedRoot -Gate 'compound_capture'
+  New-Item -ItemType Directory -Path (Join-Path $solutionWriteBlockedRoot 'harness\docs\solutions') -Force | Out-Null
+  Set-Content -LiteralPath (Join-Path $solutionWriteBlockedRoot 'harness\docs\solutions\harness-drift-patterns.md') -Value 'new long-term rule' -Encoding UTF8
+  Set-Content -LiteralPath (Join-Path $taskDir 'learning-capture.md') -Value @(
+    '# 배운 점 후보',
+    'candidate_count: 1',
+    'source_verify_summary: repeated drift',
+    'source_user_correction: user corrected harness drift',
+    'no_candidate_reason:'
   ) -Encoding UTF8
-  $eventsPath = Join-Path $taskDir 'events.jsonl'
-  $events = @(
-    (New-Event -TaskId 'task-one' -EventId 'evt-1' -EventType 'artifact_written' -PreviousHash '' -EventHash 'h1' -Payload @{ path = 'harness/docs/solutions/harness-drift-patterns.md' })
-  )
-  Write-Events -Path $eventsPath -Events $events
   $result = Invoke-VerifyJson -Root $solutionWriteBlockedRoot
   Assert-Check ($result.ok -eq $false) 'solution writes should fail without compound_review approval.'
-  Assert-Check (@($result.failures | Where-Object { $_.id -eq 'compound_review_required_for_solution_write' }).Count -eq 1) 'solution write failure id should be reported.'
+  Assert-HasIssueId -Result $result -Id 'compound_review_required_for_solution_write' -Message 'solution write failure id should be reported.'
 }
 finally {
   Remove-Item -LiteralPath $solutionWriteBlockedRoot -Recurse -Force
 }
 
-$staleLearningCaptureRoot = New-FixtureRoot
+$hotWarningRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $staleLearningCaptureRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: knowledge_maintenance',
-    'status: active',
-    'current_gate: compound_capture'
-  ) -Encoding UTF8
-  Set-Content -LiteralPath (Join-Path $taskDir 'learning-capture.md') -Value @(
-    '# 배운 점 후보',
-    '',
-    '아직 기록된 후보가 없습니다.'
-  ) -Encoding UTF8
-  Set-Content -LiteralPath (Join-Path $taskDir 'events.jsonl') -Value '' -Encoding UTF8
-  $result = Invoke-VerifyJson -Root $staleLearningCaptureRoot
-  Assert-Check ($result.ok -eq $false) 'compound_capture should fail with untouched learning-capture starter text.'
-  Assert-Check (@($result.failures | Where-Object { $_.id -eq 'learning_capture_stale_template' }).Count -eq 1) 'stale learning capture failure id should be reported.'
+  $taskDir = New-ActiveTask -Root $hotWarningRoot -Gate 'research'
+  Set-Content -LiteralPath (Join-Path $taskDir 'planning\00-current-planning-context.md') -Value ('x' * 13000) -Encoding UTF8
+  $result = Invoke-VerifyJson -Root $hotWarningRoot
+  Assert-HasIssueId -Result $result -Id 'hot_context_large_warning' -Kind 'warning' -Message 'hot context warning id should be reported above 12KB.'
 }
 finally {
-  Remove-Item -LiteralPath $staleLearningCaptureRoot -Recurse -Force
+  Remove-Item -LiteralPath $hotWarningRoot -Recurse -Force
 }
 
-$wrongTaskReceiptRoot = New-FixtureRoot
+$hotFailureRoot = New-FixtureRoot
 try {
-  $taskDir = Join-Path $wrongTaskReceiptRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path (Join-Path $taskDir 'planning') -Force | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: product_feature',
-    'status: active',
-    'current_gate: writing_plan'
-  ) -Encoding UTF8
-  Set-Content -LiteralPath (Join-Path $taskDir 'planning\03-prd.md') -Value 'prd' -Encoding UTF8
-  $events = @(
-    (New-Event -TaskId 'other-task' -EventId 'evt-1' -EventType 'artifact_read' -PreviousHash '' -EventHash 'h1' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_prd'; path = 'harness/docs/tasks/active/task-one/planning/03-prd.md'; hash = 'sha256:fake'; proof_type = 'file_sha256' })
-  )
-  Write-Events -Path (Join-Path $taskDir 'events.jsonl') -Events $events
-  $result = Invoke-VerifyJson -Root $wrongTaskReceiptRoot
-  Assert-Check ($result.ok -eq $false) 'artifact_read from a different task_id must not satisfy required reads.'
+  $taskDir = New-ActiveTask -Root $hotFailureRoot -Gate 'research'
+  Set-Content -LiteralPath (Join-Path $taskDir 'planning\00-current-planning-context.md') -Value ('x' * 26000) -Encoding UTF8
+  $result = Invoke-VerifyJson -Root $hotFailureRoot
+  Assert-Check ($result.ok -eq $false) 'verify should fail when hot context exceeds hard limit.'
+  Assert-HasIssueId -Result $result -Id 'hot_context_too_large' -Message 'hot context hard limit failure id should be reported.'
 }
 finally {
-  Remove-Item -LiteralPath $wrongTaskReceiptRoot -Recurse -Force
-}
-
-$staleHashRoot = New-FixtureRoot
-try {
-  $taskDir = Join-Path $staleHashRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path (Join-Path $taskDir 'planning') -Force | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: product_feature',
-    'status: active',
-    'current_gate: writing_plan'
-  ) -Encoding UTF8
-  Set-Content -LiteralPath (Join-Path $taskDir 'planning\03-prd.md') -Value 'changed content' -Encoding UTF8
-  $events = @(
-    (New-Event -TaskId 'task-one' -EventId 'evt-1' -EventType 'artifact_read' -PreviousHash '' -EventHash 'h1' -Payload @{ gate_id = 'writing_plan'; artifact_id = 'planning_prd'; path = 'harness/docs/tasks/active/task-one/planning/03-prd.md'; hash = 'sha256:stale'; proof_type = 'file_sha256' })
-  )
-  Write-Events -Path (Join-Path $taskDir 'events.jsonl') -Events $events
-  $result = Invoke-VerifyJson -Root $staleHashRoot
-  Assert-Check ($result.ok -eq $false) 'stale artifact_read hash must not satisfy required reads.'
-}
-finally {
-  Remove-Item -LiteralPath $staleHashRoot -Recurse -Force
-}
-
-$solutionWriteScopedRoot = New-FixtureRoot
-try {
-  $taskDir = Join-Path $solutionWriteScopedRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: knowledge_maintenance',
-    'status: active',
-    'current_gate: compound_review'
-  ) -Encoding UTF8
-  $events = @(
-    (New-Event -TaskId 'task-one' -EventId 'evt-1' -EventType 'compound_review_decision' -PreviousHash '' -EventHash 'h1' -Payload @{ candidate_ref = 'cand-1'; decision = 'promote'; reason = 'repeated violation'; target_solution_path = 'harness/docs/solutions/installer-flow-patterns.md'; user_approval_event_id = 'evt-user-1' }),
-    (New-Event -TaskId 'task-one' -EventId 'evt-2' -EventType 'artifact_written' -PreviousHash 'h1' -EventHash 'h2' -Payload @{ gate_id = 'compound_review'; artifact_id = 'selected_relevant_solutions'; path = 'harness/docs/solutions/harness-drift-patterns.md'; hash = 'sha256:dummy'; candidate_ref = 'cand-1' })
-  )
-  Write-Events -Path (Join-Path $taskDir 'events.jsonl') -Events $events
-  $result = Invoke-VerifyJson -Root $solutionWriteScopedRoot
-  Assert-Check ($result.ok -eq $false) 'solution write must fail when compound_review target path does not match.'
-}
-finally {
-  Remove-Item -LiteralPath $solutionWriteScopedRoot -Recurse -Force
-}
-
-$solutionWriteWrongCandidateRoot = New-FixtureRoot
-try {
-  $taskDir = Join-Path $solutionWriteWrongCandidateRoot 'harness\docs\tasks\active\task-one'
-  New-Item -ItemType Directory -Path $taskDir | Out-Null
-  Set-Content -LiteralPath (Join-Path $taskDir 'task.yaml') -Value @(
-    'task_id: task-one',
-    'task_type: knowledge_maintenance',
-    'status: active',
-    'current_gate: compound_review'
-  ) -Encoding UTF8
-  $events = @(
-    (New-Event -TaskId 'task-one' -EventId 'evt-1' -EventType 'compound_review_decision' -PreviousHash '' -EventHash 'h1' -Payload @{ candidate_ref = 'cand-1'; decision = 'promote'; reason = 'repeated violation'; target_solution_path = 'harness/docs/solutions/harness-drift-patterns.md'; user_approval_event_id = 'evt-user-1' }),
-    (New-Event -TaskId 'task-one' -EventId 'evt-2' -EventType 'artifact_written' -PreviousHash 'h1' -EventHash 'h2' -Payload @{ gate_id = 'compound_review'; artifact_id = 'selected_relevant_solutions'; path = 'harness/docs/solutions/harness-drift-patterns.md'; hash = 'sha256:dummy'; candidate_ref = 'cand-2' })
-  )
-  Write-Events -Path (Join-Path $taskDir 'events.jsonl') -Events $events
-  $result = Invoke-VerifyJson -Root $solutionWriteWrongCandidateRoot
-  Assert-Check ($result.ok -eq $false) 'solution write must fail when compound_review candidate_ref does not match artifact_written candidate_ref.'
-}
-finally {
-  Remove-Item -LiteralPath $solutionWriteWrongCandidateRoot -Recurse -Force
+  Remove-Item -LiteralPath $hotFailureRoot -Recurse -Force
 }
 
 $doctorRoot = New-FixtureRoot

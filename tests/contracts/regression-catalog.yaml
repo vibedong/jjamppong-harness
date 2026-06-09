@@ -120,8 +120,8 @@ regressions:
     expected: deny_dotdot_escape
   - id: T030
     priority: P0
-    title: task.yaml cannot grant permission without event log
-    expected: fail_projection_without_canonical_event
+    title: task.yaml cannot grant dangerous permission without approval summary and implementation approval
+    expected: deny_dangerous_capability_without_approval_summary
   - id: T031
     priority: P0
     title: doctor must not live-edit harness-core rules
@@ -132,8 +132,8 @@ regressions:
     expected: proposal_not_overwrite
   - id: T033
     priority: P0
-    title: broken event log hash chain fails verify
-    expected: verify_fail
+    title: legacy ledger artifacts are warnings, not hot context or authority
+    expected: warn_legacy_ledger_artifact_present
   - id: T034
     priority: P0
     title: multiple active tasks denied by default
@@ -164,8 +164,8 @@ regressions:
     expected: read_index_wide_bodies_narrow
   - id: T041
     priority: P0
-    title: writing_plan requires read receipts for PRD issues and module structure
-    expected: verify_fail_without_required_artifact_read_receipts
+    title: writing_plan requires PRD issues and module structure artifacts with enough content
+    expected: verify_fail_without_required_planning_artifacts
   - id: T042
     priority: P1
     title: compound capture writes learning candidates before archive

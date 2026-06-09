@@ -44,12 +44,12 @@ coverage:
       - realpath_containment
       - symlink_junction_escape
       - dotdot_escape
-  source_of_truth_contract:
+  workflow_state_contract:
     tests: [T030, T033]
     verify_checks:
-      - event_log_canonical
-      - hash_chain_valid
-      - projection_drift_fail
+      - task_yaml_current_state_cache
+      - approval_summary_required
+      - legacy_ledger_artifact_present_warning
   doctor_update_contract:
     tests: [T031, T032]
     verify_checks:
@@ -68,6 +68,5 @@ coverage:
       - compound_proposal_only_for_rule_change
       - compound_lookup_limited_body_reads
       - artifact_routing_contract
-      - artifact_read_receipts
       - compound_review_promotion_gate
       - learning_capture_template

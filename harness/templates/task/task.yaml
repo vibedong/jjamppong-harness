@@ -2,9 +2,15 @@ task_id: "{{task_id}}"
 task_type: "{{task_type}}"
 status: active
 current_gate: intake
-canonical_event_log: events.jsonl
-human_projection: gate-ledger.md
-cache_projection: task.yaml
-planning_pack: planning-pack.md
 created_at: "{{created_at}}"
 updated_at: "{{updated_at}}"
+next_action: "사용자 의도를 확인하고 grill 단계로 이동한다."
+approval_summary:
+  implementation: locked
+  allowed_capabilities: []
+  allowed_paths: []
+  package_install: false
+  network_live_target: false
+  git_commit: false
+  git_push: false
+  approval_source: ""

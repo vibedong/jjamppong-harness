@@ -29,8 +29,6 @@ function New-LifecycleRoot {
 
 foreach ($file in @(
   'harness/templates/task/task.yaml',
-  'harness/templates/task/events.jsonl.template',
-  'harness/templates/task/gate-ledger.md',
   'harness/templates/task/planning-pack.md',
   'harness/templates/task/planning/00-current-planning-context.md',
   'harness/templates/task/planning/01-grill-summary.md',
@@ -42,6 +40,8 @@ foreach ($file in @(
   'harness/templates/task/planning/05-module-structure.md',
   'harness/templates/task/planning/06-writing-plan.md',
   'harness/templates/task/planning/07-plan-review.md',
+  'harness/templates/task/implementation-approval.md',
+  'harness/templates/task/verification.md',
   'harness/templates/task/learning-capture.md',
   'harness/templates/task/compound-review.md',
   'harness/templates/task/archive-summary.md',
@@ -57,20 +57,21 @@ foreach ($file in @(
   Assert-Check (Test-Path -LiteralPath (Join-Path $RepoRoot $file)) "Missing lifecycle/template file: $file"
 }
 
+foreach ($legacyFile in @(
+  'harness/templates/task/events.jsonl.template',
+  'harness/templates/task/gate-ledger.md'
+)) {
+  Assert-Check (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $legacyFile))) "Legacy ledger template must not exist: $legacyFile"
+}
+
 $planningState = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\state\planning.md') -Raw
-Assert-Check ($planningState.Contains('events.jsonl')) 'Planning state must point at events.jsonl.'
-Assert-Check ($planningState.Contains('gate-ledger.md') -and $planningState.Contains('projection')) 'Planning state must treat gate-ledger.md as projection.'
-Assert-Check ($planningState.Contains('task.yaml') -and $planningState.Contains('cache')) 'Planning state must treat task.yaml as cache.'
+Assert-Check (-not $planningState.Contains('events.jsonl')) 'Planning state must not hot-read events.jsonl.'
+Assert-Check (-not $planningState.Contains('gate-ledger.md')) 'Planning state must not depend on gate-ledger.md.'
+Assert-Check ($planningState.Contains('task.yaml') -and $planningState.Contains('current')) 'Planning state must treat task.yaml as the current task state.'
 
 $context = Get-Content -LiteralPath (Join-Path $RepoRoot 'CONTEXT.md') -Raw
-Assert-Check ($context.Contains('Event log')) 'CONTEXT.md must define Event log.'
-Assert-Check ($context.Contains('Archive summary')) 'CONTEXT.md must define Archive summary.'
-
-$gateLedgerTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\gate-ledger.md') -Raw
-Assert-Check ($gateLedgerTemplate.Contains('승인 기록')) 'gate-ledger template must be user-facing Korean by default.'
-Assert-Check ($gateLedgerTemplate.Contains('원본 기록')) 'gate-ledger template must explain canonical source in Korean.'
-Assert-Check ($gateLedgerTemplate.Contains('events.jsonl')) 'gate-ledger template must still reference events.jsonl.'
-Assert-Check ($gateLedgerTemplate.Contains('이 파일만 보고 권한을 판단하지 마세요')) 'gate-ledger template must warn that it is not the authority.'
+Assert-Check (-not $context.Contains('Event log')) 'CONTEXT.md must not define Event log as core harness surface.'
+Assert-Check ($context.Contains('Archive summary')) 'CONTEXT.md must still define Archive summary.'
 
 $archiveTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\archive-summary.md') -Raw
 Assert-Check ($archiveTemplate.Contains('보관 요약')) 'archive summary template must be user-facing Korean by default.'
@@ -79,19 +80,39 @@ $verificationTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\t
 Assert-Check ($verificationTemplate.Contains('검증 기록')) 'verification template must be user-facing Korean by default.'
 
 $approvalTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\implementation-approval.md') -Raw
-Assert-Check ($approvalTemplate.Contains('구현 승인 요약')) 'implementation approval template must be user-facing Korean by default.'
-Assert-Check ($approvalTemplate.Contains('events.jsonl')) 'implementation approval template must still reference canonical events.'
+foreach ($token in @(
+  '# 구현 승인',
+  '## 승인 질문',
+  '## 사용자 답변 요약',
+  '## 허용 작업',
+  '## 금지 작업',
+  '## 파일 범위',
+  '## 테스트 범위',
+  '## Capability 허용 여부',
+  '## 승인 만료 또는 철회 조건',
+  '현재 채팅에서 사용자가 명시 승인한 범위'
+)) {
+  Assert-Check ($approvalTemplate.Contains($token)) "implementation approval template missing token: $token"
+}
+Assert-Check (-not $approvalTemplate.Contains('events.jsonl')) 'implementation approval template must not reference events.jsonl.'
 
 $learningTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\learning-capture.md') -Raw
-Assert-Check ($learningTemplate.Contains('배운 점 후보')) 'learning-capture template must be user-facing Korean by default.'
-Assert-Check ($learningTemplate.Contains('raw 대화 전문을 저장하지 않습니다')) 'learning-capture template must reject raw transcript storage.'
-Assert-Check ($learningTemplate.Contains('candidate_count: 0')) 'learning-capture template must expose candidate_count metadata.'
-Assert-Check ($learningTemplate.Contains('source_events_hash:')) 'learning-capture template must expose source event hash metadata.'
+foreach ($token in @(
+  'candidate_count:',
+  'source_verify_summary:',
+  'source_user_correction:',
+  'no_candidate_reason:'
+)) {
+  Assert-Check ($learningTemplate.Contains($token)) "learning-capture template missing event-free metadata: $token"
+}
+Assert-Check (-not $learningTemplate.Contains('source_events_hash')) 'learning-capture template must not expose source_events_hash.'
+Assert-Check (-not $learningTemplate.Contains('events.jsonl')) 'learning-capture template must not reference events.jsonl.'
 Assert-Check ($learningTemplate.Contains('compound-review.md')) 'learning-capture template must point to compound review.'
 
 $compoundReviewTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\compound-review.md') -Raw
 Assert-Check ($compoundReviewTemplate.Contains('Compound Review')) 'compound review template must exist.'
 Assert-Check ($compoundReviewTemplate.Contains('promote / keep_active_only / merge_existing / discard')) 'compound review template must define decisions.'
+Assert-Check ($compoundReviewTemplate.Contains('startup, permission, verify, implementation gate의 필수 입력이 아닙니다')) 'compound review template must stay out of hot context.'
 Assert-Check ($compoundReviewTemplate.Contains('사용자 승인 없이 live harness rule을 직접 수정하지 않습니다')) 'compound review template must block unapproved live rule edits.'
 
 $solutionsIndex = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\docs\solutions\index.md') -Raw
@@ -122,9 +143,20 @@ foreach ($entry in $planningTemplateTokens.GetEnumerator()) {
 }
 
 $taskYamlTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\task.yaml') -Raw
-Assert-Check ($taskYamlTemplate.Contains('cache_projection: task.yaml')) 'task.yaml template must remain machine-readable cache projection.'
-$eventsTemplate = Get-Content -LiteralPath (Join-Path $RepoRoot 'harness\templates\task\events.jsonl.template') -Raw
-Assert-Check ($eventsTemplate.Contains('template_only')) 'events.jsonl template must remain a template-only marker, not live approval evidence.'
+foreach ($token in @(
+  'current_gate: intake',
+  'approval_summary:',
+  'implementation: locked',
+  'allowed_capabilities: []',
+  'allowed_paths: []',
+  'package_install: false',
+  'network_live_target: false',
+  'git_commit: false',
+  'git_push: false'
+)) {
+  Assert-Check ($taskYamlTemplate.Contains($token)) "task.yaml template missing ledgerless state token: $token"
+}
+Assert-Check (-not $taskYamlTemplate.Contains('cache_projection: task.yaml')) 'task.yaml template must not describe itself as a projection cache.'
 
 $root = New-LifecycleRoot
 try {
@@ -133,14 +165,16 @@ try {
   Assert-Check ($created.ok -eq $true) 'create-task should return ok.'
 
   $taskRoot = Join-Path $root 'harness\docs\tasks\active\test-task'
-  foreach ($file in @('task.yaml', 'events.jsonl', 'gate-ledger.md', 'planning-pack.md', 'planning\00-current-planning-context.md', 'planning\06-writing-plan.md', 'learning-capture.md', 'compound-review.md', 'archive-summary.md')) {
+  foreach ($file in @('task.yaml', 'planning-pack.md', 'planning\00-current-planning-context.md', 'planning\06-writing-plan.md', 'implementation-approval.md', 'verification.md', 'learning-capture.md', 'compound-review.md', 'archive-summary.md')) {
     Assert-Check (Test-Path -LiteralPath (Join-Path $taskRoot $file)) "create-task missing $file"
   }
-  $events = Get-Content -LiteralPath (Join-Path $taskRoot 'events.jsonl') -Raw
-  Assert-Check ([string]::IsNullOrWhiteSpace($events)) 'Live events.jsonl should start empty.'
-  $liveGateLedger = Get-Content -LiteralPath (Join-Path $taskRoot 'gate-ledger.md') -Raw
-  Assert-Check ($liveGateLedger.Contains('승인 기록')) 'generated gate-ledger.md must use human-facing starter copy.'
-  Assert-Check ($liveGateLedger.Contains('events.jsonl')) 'generated gate-ledger.md must point to canonical events.'
+  Assert-Check (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'events.jsonl'))) 'create-task must not create events.jsonl.'
+  Assert-Check (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'gate-ledger.md'))) 'create-task must not create gate-ledger.md.'
+
+  $liveTaskYaml = Get-Content -LiteralPath (Join-Path $taskRoot 'task.yaml') -Raw
+  Assert-Check ($liveTaskYaml.Contains('current_gate: intake')) 'generated task.yaml must start at intake gate.'
+  Assert-Check ($liveTaskYaml.Contains('approval_summary:')) 'generated task.yaml must contain approval_summary.'
+  Assert-Check ($liveTaskYaml.Contains('implementation: locked')) 'generated task.yaml must lock implementation by default.'
 
   $livePlanningPack = Get-Content -LiteralPath (Join-Path $taskRoot 'planning-pack.md') -Raw
   Assert-Check ($livePlanningPack.Contains('최종 결정 manifest')) 'generated planning-pack.md must preserve decision-manifest wording.'

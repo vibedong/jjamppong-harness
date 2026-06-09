@@ -7,8 +7,8 @@ raw 대화 전문을 저장하지 않습니다.
 ## Capture Metadata
 
 candidate_count: 0
-source_verify_hash:
-source_events_hash:
+source_verify_summary:
+source_user_correction:
 no_candidate_reason:
 
 ## 자동분류 후보

@@ -12,23 +12,23 @@ The mandatory pre-implementation sequence that every task must pass before execu
 **Task artifact**:
 A file created under `harness/docs/tasks/active/<slug>/` while planning, reviewing, implementing, or verifying a task.
 
-**Event log**:
-The append-only canonical task record at `harness/docs/tasks/active/<slug>/events.jsonl`.
-This is the source of truth for gate questions, user answers, approval decisions, permission decisions, verification results, and archive events.
+**Task state**:
+The compact current state at `harness/docs/tasks/active/<slug>/task.yaml`.
+It records `current_gate`, `next_action`, and `approval_summary`, but it does not store history.
 
-**Gate ledger**:
-The human-readable projection at `harness/docs/tasks/active/<slug>/gate-ledger.md`.
-It helps people review decisions, but it does not grant permission by itself.
+**Implementation approval**:
+The human-readable approval summary at `harness/docs/tasks/active/<slug>/implementation-approval.md`.
+Dangerous work requires both this summary and matching `task.yaml approval_summary`.
 
-**Task cache**:
-The compact derived state at `harness/docs/tasks/active/<slug>/task.yaml`.
-If it disagrees with `events.jsonl`, verification fails and `events.jsonl` wins.
+**Current planning context**:
+The short hot-context summary at `harness/docs/tasks/active/<slug>/planning/00-current-planning-context.md`.
+It should contain only decisions, open questions, and the next action.
 
 **Brief**:
 The task-specific summary at `harness/docs/tasks/active/<slug>/brief.md`. This is not the same as root `handoff.md`.
 
 **Writing plan**:
-A Superpowers implementation plan at `harness/docs/tasks/active/<slug>/writing-plan.md`.
+A Superpowers implementation plan at `harness/docs/tasks/active/<slug>/planning/06-writing-plan.md`.
 
 **Module**:
 Product or application code under `modules/`, created only after approved module structure exists.
@@ -41,8 +41,9 @@ The required cold-context summary at `archive-summary.md` before moving a task f
 
 ## Relationships
 
-- The event log records gate questions, user answers, approval decisions, and permission decisions.
-- `gate-ledger.md`, `task.yaml`, and `planning-pack.md` are projections or manifests derived from approved state.
+- `task.yaml` records current gate and approval summary, not full history.
+- `implementation-approval.md` explains approved implementation scope in the user's language.
+- `planning/00-current-planning-context.md` is the short context a new chat should read first.
 - The planning gate creates a PRD.
 - A PRD is decomposed into one or more local task issues.
 - The task issues inform the brief and writing plan.

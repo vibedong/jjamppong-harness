@@ -3,23 +3,32 @@
 
 function categoryForFailureId(id) {
   const table = {
-    artifact_forbidden_read: 'gate-order',
-    artifact_read_receipt_missing: 'artifact-routing',
-    artifact_required_write_missing: 'artifact-routing',
+    gate_required_artifact_missing: 'artifact-routing',
+    gate_artifact_content_insufficient: 'artifact-routing',
+    implementation_approval_missing: 'permission-boundary',
+    approval_summary_missing: 'permission-boundary',
+    compound_review_required_for_solution_write: 'harness-drift',
+    hot_context_too_large: 'harness-drift',
+    hot_context_large_warning: 'harness-drift',
+    legacy_ledger_artifact_present: 'harness-drift',
     nested_harness_folder: 'installer-flow',
     planning_started_during_install: 'installer-flow',
     github_repo_created_during_install: 'installer-flow',
     commit_created_during_install: 'permission-boundary',
     push_performed_during_install: 'permission-boundary',
-    projection_without_canonical_event: 'permission-boundary',
-    compound_review_required_for_solution_write: 'harness-drift',
   };
   return table[id] || null;
 }
 
+function scalarLine(text, key) {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = String(text || '').match(new RegExp(`^${escaped}:\\s*(.+?)\\s*$`, 'm'));
+  return match ? match[1].trim() : '';
+}
+
 function classifyLearningCandidates(input) {
   const failures = Array.isArray(input.failures) ? input.failures : [];
-  const events = Array.isArray(input.events) ? input.events : [];
+  const acceptanceText = String(input.acceptanceText || '');
   const candidates = [];
   let next = 1;
 
@@ -43,14 +52,15 @@ function classifyLearningCandidates(input) {
     });
   }
 
-  for (const event of events) {
-    const payload = event.payload || {};
-    if (event.event_type !== 'user_correction' || !payload.category) continue;
+  const correction = scalarLine(acceptanceText, 'source_user_correction');
+  if (correction) {
+    const category = scalarLine(acceptanceText, 'source_user_correction_category') || 'harness-drift';
+    const prevention = scalarLine(acceptanceText, 'source_user_correction_prevention') || 'Review this correction during compound_review.';
     pushCandidate({
-      category: payload.category,
-      summary: payload.summary || 'User correction recorded in canonical event data.',
-      evidence: event.event_id || 'user_correction',
-      recurrence_prevention: payload.recurrence_prevention || 'Review this correction during compound_review.',
+      category,
+      summary: correction,
+      evidence: 'source_user_correction',
+      recurrence_prevention: prevention,
       promotion_recommendation: 'keep_active_only',
     });
   }

@@ -7,11 +7,11 @@ The permission source of truth is:
 ```text
 1. FINAL-PLAN.md in the build pack, while rebuilding this template
 2. harness/contracts/*.yaml
-3. active task events.jsonl
+3. active task task.yaml
 4. PermissionDecision output
 ```
 
-`AGENTS.md`, this file, `workflow.md`, `gate-ledger.md`, and `task.yaml` may restrict behavior further, but they must not grant permission beyond the contracts and canonical events.
+`AGENTS.md`, this file, `workflow.md`, and `task.yaml` may restrict behavior further, but they must not grant permission beyond the contracts and current approval summary.
 
 ## Hard Defaults
 
@@ -33,13 +33,9 @@ Static templates may use Korean starter copy. This phase does not add lifecycle-
 
 Machine-readable artifacts keep stable schema keys.
 
-`events.jsonl`, `task.yaml`, contracts, and PermissionDecision outputs keep stable machine-readable keys.
+`task.yaml`, contracts, and PermissionDecision outputs keep stable machine-readable keys.
 
-events.jsonl, task.yaml, contracts, and PermissionDecision outputs keep stable machine-readable keys.
-
-`gate-ledger.md`, planning artifacts, `archive-summary.md`, `verification.md`, and `handoff.md` are human-facing.
-
-gate-ledger.md, planning artifacts, archive-summary.md, verification.md, and handoff.md are human-facing.
+Planning artifacts, `implementation-approval.md`, `archive-summary.md`, `verification.md`, and `handoff.md` are human-facing.
 
 ## Required Reads For Substantive Work
 
@@ -52,7 +48,6 @@ harness/contracts/task.schema.yaml
 harness/contracts/permission-decision.schema.yaml
 harness/rules/workflow.md
 harness/state/planning.md
-active task events.jsonl, if one exists
 active task task.yaml, if one exists
 ```
 
@@ -66,22 +61,11 @@ Before a gate or skill starts, check `harness/contracts/skill-artifact-map.yaml`
 
 Do not rely on memory for required artifacts.
 
-Record artifact_read events for required artifact reads.
-
-Record `artifact_read` events for required artifact reads.
-
-The `artifact_read` event payload must include:
-
-```text
-gate_id
-artifact_id
-path
-hash
-```
+Use the current gate artifact list to decide the smallest required read/write surface.
 
 If a required artifact is missing, stop at the current gate and explain the missing artifact.
 
-If a required read receipt is missing, verification fails.
+If a required artifact is still starter text or too thin for the gate, verification fails.
 
 Do not promote learning candidates into harness/docs/solutions without compound_review.
 
@@ -137,25 +121,24 @@ required next action
 
 If the decision is not `allow`, do not perform the action.
 
-## Event Log And Projections
+## Current State And Approval Summary
 
-Canonical task state lives in:
+Current task state lives in:
 
 ```text
-harness/docs/tasks/active/<slug>/events.jsonl
+harness/docs/tasks/active/<slug>/task.yaml
 ```
 
-Derived projections:
+Human-facing summaries:
 
 ```text
-gate-ledger.md = human-readable projection
-task.yaml = compact cache
+implementation-approval.md = exact-scope approval summary
 planning-pack.md = final decision manifest
 ```
 
-If `task.yaml` or `gate-ledger.md` says something is approved but `events.jsonl` does not contain the approval, verification fails and the gate stays locked.
+If `task.yaml` says implementation is approved but `implementation-approval.md` is missing or too vague, verification fails and the gate stays locked.
 
-Doctor may regenerate projections from canonical events, but it must not invent approvals.
+Doctor may diagnose missing summaries, but it must not invent approvals.
 
 ## Gate Question Format
 
@@ -250,6 +233,6 @@ Use this Korean prompt when the user is working in Korean:
 
 ```text
 handoff.md 보고 이어서 진행해줘.
-먼저 AGENTS.md, harness/rules/workflow.md, 현재 active task의 task.yaml/events.jsonl을 확인해줘.
+먼저 AGENTS.md, harness/rules/workflow.md, 현재 active task의 task.yaml과 planning/00-current-planning-context.md를 확인해줘.
 현재 gate 상태를 확인한 뒤, 바로 구현하지 말고 필요한 다음 단계부터 이어서 진행해줘.
 ```

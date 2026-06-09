@@ -20,8 +20,9 @@ harness/contracts/permission-decision.schema.yaml
 harness/rules/workflow.md
 harness/rules/rules.md
 harness/state/planning.md
-active task events.jsonl, if one exists
 active task task.yaml, if one exists
+active task planning/00-current-planning-context.md, if one exists
+active task implementation-approval.md, only when implementation/work permission is requested
 ```
 
 If required files are missing, stale, or contradictory, stop and run verify/doctor.
@@ -32,15 +33,16 @@ Permission is granted only by:
 
 ```text
 harness/contracts/*.yaml
-active task events.jsonl
+active task task.yaml
+active task implementation-approval.md
 PermissionDecision result
 ```
 
-`gate-ledger.md` is a human-readable projection.
+`task.yaml` records the current gate and approval_summary.
 
-`task.yaml` is a derived cache.
+`implementation-approval.md` is a human-readable exact-scope approval summary.
 
-This file may restrict behavior further, but it must not grant permission beyond contracts and canonical events.
+This file may restrict behavior further, but it must not grant permission beyond contracts and PermissionDecision result.
 
 ## Hard Rules
 
@@ -59,7 +61,7 @@ This file may restrict behavior further, but it must not grant permission beyond
 - Package install, live target access, commit, and push each need separate explicit capability approval.
 - Harness-core changes in product tasks must become proposals, not live edits.
 - Doctor/update/repair are proposal-only by default for modified managed files.
-- Before running a gate or skill, check `harness/contracts/skill-artifact-map.yaml` for required artifacts and record valid `artifact_read` events for file-backed reads.
+- Before running a gate or skill, check `harness/contracts/skill-artifact-map.yaml` for required artifacts and inspect only the current gate artifact surface.
 - Root `handoff.md` changes only when the user asks for handoff.
 
 ## User Language
@@ -71,7 +73,6 @@ If the user writes Korean, ask in Korean and explain technical labels briefly in
 - Human-facing artifacts use the user's language.
 - Machine-readable artifacts keep stable schema keys.
 - Static templates may use Korean starter copy; agents write live human-facing artifacts in the current user's language when presenting or updating them.
-- This phase does not add lifecycle-level localization.
 
 ## Git
 

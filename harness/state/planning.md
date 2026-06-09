@@ -6,16 +6,15 @@ When a task starts, record:
 
 - Active Task Slug
 - Current Gate
-- Canonical Event Log
-- Gate Ledger Projection
-- Task YAML Cache
+- Task YAML Current State
+- Current Planning Context
 - Current Allowed Capability Scope
 - Next Locked Gate
 
-Task-specific gate approvals belong in `harness/docs/tasks/active/<slug>/events.jsonl`.
+Task-specific gate status belongs in `harness/docs/tasks/active/<slug>/task.yaml`.
 
-`gate-ledger.md` is a human-readable projection.
+`planning/00-current-planning-context.md` is the short hot-context summary for the active task.
 
-`task.yaml` is a derived cache.
+`implementation-approval.md` is the human-readable approval summary for implementation scope.
 
 This state file points to the active task only. It is not the source of truth for gate approvals or permissions.

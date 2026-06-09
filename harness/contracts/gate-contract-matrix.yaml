@@ -1,9 +1,10 @@
-version: 0.1.0
+version: 0.2.0
 name: jjamppong-harness-gate-contract-matrix
 notes:
   - Workflow gates are not the same as capability approvals.
-  - Capability approvals may be embedded in implementation approval or separate exact-scope gates.
+  - Capability approvals are summarized in implementation-approval.md and task.yaml approval_summary.
   - Missing or ambiguous capabilities are denied.
+  - Gate checks inspect current state and artifacts, not event history.
 
 gates:
   install:
@@ -20,8 +21,8 @@ gates:
     user_label: 요청 기록
     previous: [install_or_existing_project]
     reads: [user_prompt]
-    writes: [task_artifact]
-    required_artifacts: [task.yaml, events.jsonl]
+    writes: [task.yaml, planning/00-current-planning-context.md]
+    required_artifacts: [task.yaml]
     forbidden: [project_file_read, prd, module_creation, code, tests, live_access]
     transition_to: [grill]
     verify_ids: [T004]
@@ -29,9 +30,9 @@ gates:
   grill:
     user_label: 압박 질문
     previous: [intake]
-    reads: [user_prompt, prior_user_answers]
-    writes: [planning/01-grill-summary.md, events.jsonl]
-    required_artifacts: [grill-summary, gate_question_events, user_answer_events]
+    reads: [user_prompt, prior_user_answers, task.yaml]
+    writes: [planning/01-grill-summary.md, task.yaml]
+    required_artifacts: [grill-summary]
     forbidden: [project_scan_before_approval, docs_first, prd, issues, folders, code, tests, live_access]
     transition_to: [research]
     verify_ids: [T005, T006, T007]
@@ -40,8 +41,8 @@ gates:
     aliases: [evidence_check]
     user_label: 자료조사 / 근거 확인
     previous: [grill]
-    reads: [file.read.project, network.web_research]
-    writes: [planning/02-research-summary.md, events.jsonl]
+    reads: [file.read.project, network.web_research, task.yaml, planning/01-grill-summary.md]
+    writes: [planning/02-research-summary.md, task.yaml]
     required_artifacts: [research-summary]
     forbidden: [network.live_target, package.install, code, tests, folders, prd_approval_without_user]
     transition_to: [grill, compound_lookup, prd]
@@ -50,8 +51,8 @@ gates:
   compound_lookup:
     user_label: 이전 배운 점 확인
     previous: [research]
-    reads: [knowledge.index, archive.summary, selected_top_learnings]
-    writes: [planning/02b-compound-lookup.md]
+    reads: [task.yaml, knowledge.index, archive.summary, selected_top_learnings]
+    writes: [planning/02b-compound-lookup.md, task.yaml]
     required_artifacts: [compound-lookup-summary]
     forbidden: [archive_raw_default_read, past_learning_over_current_intent, unapproved_proposal_as_rule]
     transition_to: [prd]
@@ -60,8 +61,8 @@ gates:
   architecture_orientation:
     user_label: 기술 구성 설명
     previous: [grill]
-    reads: [planning_context]
-    writes: [planning/02c-architecture-orientation.md]
+    reads: [task.yaml, planning_context]
+    writes: [planning/02c-architecture-orientation.md, task.yaml]
     required_artifacts: [architecture-orientation]
     forbidden: [technology_forcing_without_user, code]
     transition_to: [prd]
@@ -69,7 +70,8 @@ gates:
   prd:
     user_label: PRD / 기획 확정
     previous: [grill, research]
-    writes: [planning/03-prd.md, planning-pack.md]
+    reads: [task.yaml, grill-summary, research-summary]
+    writes: [planning/03-prd.md, planning-pack.md, task.yaml]
     required_artifacts: [approved_prd]
     forbidden: [implementation, code, tests, folder_creation]
     transition_to: [issues]
@@ -78,7 +80,8 @@ gates:
   issues:
     user_label: 이슈 나누기
     previous: [prd]
-    writes: [planning/04-issues.md, planning-pack.md]
+    reads: [task.yaml, planning/03-prd.md]
+    writes: [planning/04-issues.md, planning-pack.md, task.yaml]
     required_artifacts: [approved_issues]
     forbidden: [code, tests, live_access]
     transition_to: [module_structure]
@@ -86,7 +89,8 @@ gates:
   module_structure:
     user_label: 구조 나누기
     previous: [prd, issues]
-    writes: [planning/05-module-structure.md, module_structure_state_projection]
+    reads: [task.yaml, planning/03-prd.md, planning/04-issues.md]
+    writes: [planning/05-module-structure.md, module_structure_state_projection, task.yaml]
     required_artifacts: [approved_module_structure]
     forbidden: [folder_creation, code, tests, fixtures, live_access]
     transition_to: [writing_plan, folder_skeleton]
@@ -95,8 +99,8 @@ gates:
   writing_plan:
     user_label: 구현계획 쓰기
     previous: [issues, module_structure]
-    reads: [planning/00-current-planning-context.md, prd, issues, module_structure]
-    writes: [planning/06-writing-plan.md]
+    reads: [task.yaml, planning/00-current-planning-context.md, prd, issues, module_structure]
+    writes: [planning/06-writing-plan.md, task.yaml]
     required_artifacts: [writing_plan]
     forbidden: [code, tests, fixtures, live_access]
     transition_to: [plan_review]
@@ -105,7 +109,8 @@ gates:
   plan_review:
     user_label: 계획 리뷰
     previous: [writing_plan]
-    writes: [planning/07-plan-review.md]
+    reads: [task.yaml, planning/06-writing-plan.md]
+    writes: [planning/07-plan-review.md, task.yaml]
     required_artifacts: [plan_review]
     forbidden: [implementation_unlock, code, tests, fixtures, live_access]
     transition_to: [folder_skeleton, implementation]
@@ -114,8 +119,9 @@ gates:
   folder_skeleton:
     user_label: 빈 폴더틀 승인
     previous: [module_structure]
-    writes: [approved_empty_dirs, approved_gitkeep, approved_placeholder_docs]
-    required_artifacts: [folder_skeleton_approval, skeleton_log]
+    reads: [task.yaml, planning/05-module-structure.md]
+    writes: [approved_empty_dirs, approved_gitkeep, approved_placeholder_docs, task.yaml]
+    required_artifacts: [folder_skeleton_approval]
     forbidden: [executable_source, tests, fixtures, runtime_config, package_files, live_access]
     transition_to: [implementation, writing_plan]
     verify_ids: [T017, T018]
@@ -123,8 +129,9 @@ gates:
   implementation:
     user_label: 진짜 작업 승인
     previous: [plan_review]
-    writes: [implementation-approval.md, events.jsonl]
-    required_artifacts: [permission_decision_scope, artifact_hash_snapshot]
+    reads: [task.yaml, planning/03-prd.md, planning/04-issues.md, planning/05-module-structure.md, planning/06-writing-plan.md, planning/07-plan-review.md]
+    writes: [implementation-approval.md, task.yaml]
+    required_artifacts: [implementation-approval.md, approval_summary]
     effect_capabilities: [file.write.module, exec.test, exec.build, package.install, network.live_target, git.commit, git.push]
     forbidden: [implicit_capability, approval_scope_expansion]
     transition_to: [work]
@@ -133,8 +140,9 @@ gates:
   work:
     user_label: 작업 실행
     previous: [implementation]
-    writes: [approved_target_paths]
-    required_artifacts: [permission_decisions, implementation_log]
+    reads: [task.yaml, implementation-approval.md]
+    writes: [approved_target_paths, task.yaml]
+    required_artifacts: [approval_summary, implementation_approval]
     forbidden: [scope_creep, unapproved_outside_modules, unapproved_live_access, unapproved_git, unapproved_package_install]
     transition_to: [verification]
     verify_ids: [T020, T021, T022, T024, T025, T026, T027, T028]
@@ -142,7 +150,8 @@ gates:
   verification:
     user_label: 검증
     previous: [work]
-    writes: [verification.md]
+    reads: [task.yaml, implementation-approval.md]
+    writes: [verification.md, task.yaml]
     required_artifacts: [commands_run, expected_actual, exit_codes, risk_status]
     forbidden: [new_feature_work]
     transition_to: [acceptance, compound_capture]
@@ -150,7 +159,8 @@ gates:
   acceptance:
     user_label: 사용자 확인
     previous: [verification]
-    writes: [acceptance.md]
+    reads: [task.yaml, verification.md]
+    writes: [acceptance.md, task.yaml]
     required_artifacts: [accepted_or_deferred_or_blocked]
     forbidden: [silent_archive_without_acceptance_status]
     transition_to: [compound_capture, archive]
@@ -158,7 +168,8 @@ gates:
   compound_capture:
     user_label: 배운 점 정리
     previous: [verification]
-    writes: [learning-capture.md, knowledge_draft]
+    reads: [task.yaml, verification.md]
+    writes: [learning-capture.md, knowledge_draft, task.yaml]
     required_artifacts: [learning_capture]
     forbidden: [live_rule_edit]
     transition_to: [compound_review, archive]
@@ -167,8 +178,8 @@ gates:
   compound_review:
     user_label: 배운 점 장기반영 검토
     previous: [compound_capture]
-    reads: [learning_capture, compound_state, solutions_index]
-    writes: [compound-review.md, events.jsonl]
+    reads: [task.yaml, learning_capture, compound_state, solutions_index]
+    writes: [compound-review.md, task.yaml]
     required_artifacts: [compound_review_decision]
     forbidden: [silent_solution_promotion, raw_transcript_storage]
     transition_to: [archive, proposal]
@@ -177,7 +188,8 @@ gates:
   proposal:
     user_label: 개선 제안
     previous: [compound_review_or_user_request]
-    writes: [proposals/active/*.md]
+    reads: [task.yaml, planning_context]
+    writes: [proposals/active/*.md, task.yaml]
     required_artifacts: [proposal_doc]
     forbidden: [live_harness_core_change_without_approval]
     transition_to: [template_maintenance, archive]
@@ -186,13 +198,15 @@ gates:
   archive:
     user_label: 완료 보관
     previous: [verification]
-    writes: [archive-summary.md, tasks/index.md, archive_move]
+    reads: [task.yaml, verification.md, learning-capture.md]
+    writes: [archive-summary.md, tasks/index.md, archive_move, task.yaml]
     required_artifacts: [archive_summary]
     forbidden: [active_left_dirty, raw_archive_as_hot_context]
 
   handoff:
     user_label: 새 채팅 인계
     previous: [user_requested]
+    reads: [task.yaml, planning/00-current-planning-context.md]
     writes: [handoff.md]
-    required_artifacts: [handoff_summary]
+    required_artifacts: [handoff_summary, next_chat_prompt]
     forbidden: [automatic_handoff_update]

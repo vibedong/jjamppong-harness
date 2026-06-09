@@ -4,18 +4,41 @@
 const fs = require('fs');
 const path = require('path');
 
-const CAPABILITY_EFFECT_ALIASES = {
-  'file.write.module': ['file.write.module', 'code', 'tests', 'fixtures'],
-  'file.write.folder_skeleton': ['file.write.folder_skeleton', 'folder_skeleton'],
-  'file.write.outside_modules': ['file.write.outside_modules', 'outside_modules_write'],
-  'file.write.harness_core': ['file.write.harness_core', 'harness_core_change'],
-  'network.live_target': ['network.live_target', 'live_access'],
-  'network.web_research': ['network.web_research'],
-  'package.install': ['package.install', 'package_install'],
-  'git.commit': ['git.commit', 'git_commit'],
-  'git.push': ['git.push', 'git_push'],
-  'installer.install': ['installer.install'],
-  'parallel.write': ['parallel.write'],
+const READ_ALLOWED_GATES = new Set([
+  'research',
+  'compound_lookup',
+  'architecture_orientation',
+  'prd',
+  'issues',
+  'module_structure',
+  'writing_plan',
+  'plan_review',
+  'implementation',
+  'work',
+  'verification',
+  'acceptance',
+  'compound_capture',
+  'compound_review',
+  'archive',
+  'handoff',
+]);
+
+const DANGEROUS_CAPABILITIES = new Set([
+  'file.write.module',
+  'file.write.outside_modules',
+  'file.write.harness_core',
+  'package.install',
+  'network.live_target',
+  'git.commit',
+  'git.push',
+  'parallel.write',
+]);
+
+const BOOLEAN_CAPABILITY_FIELDS = {
+  'package.install': 'package_install',
+  'network.live_target': 'network_live_target',
+  'git.commit': 'git_commit',
+  'git.push': 'git_push',
 };
 
 const SECRET_PATTERNS = [
@@ -33,6 +56,17 @@ const EXECUTABLE_SKELETON_EXTENSIONS = new Set([
   '.ps1', '.sh', '.bat', '.cmd',
   '.json', '.toml', '.yaml', '.yml',
 ]);
+
+const APPROVAL_HEADINGS = [
+  '## 승인 질문',
+  '## 사용자 답변 요약',
+  '## 허용 작업',
+  '## 금지 작업',
+  '## 파일 범위',
+  '## 테스트 범위',
+  '## Capability 허용 여부',
+  '## 승인 만료 또는 철회 조건',
+];
 
 function parseArgs(argv) {
   const args = {};
@@ -67,32 +101,51 @@ function readTextIfExists(filePath) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
-function parseTaskYaml(text) {
-  const task = {};
-  for (const line of text.split(/\r?\n/)) {
-    const match = line.match(/^\s*([A-Za-z0-9_.-]+):\s*(.+?)\s*$/);
-    if (!match) continue;
-    task[match[1]] = match[2].replace(/^["']|["']$/g, '');
-  }
-  return task;
+function parseScalar(value) {
+  const trimmed = String(value || '').trim().replace(/^["']|["']$/g, '');
+  if (/^true$/i.test(trimmed)) return true;
+  if (/^false$/i.test(trimmed)) return false;
+  if (trimmed === '[]') return [];
+  return trimmed;
 }
 
-function readJsonl(filePath) {
-  if (!filePath || !fs.existsSync(filePath)) return [];
-  const text = fs.readFileSync(filePath, 'utf8');
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line, index) => {
-      try {
-        return JSON.parse(line);
-      } catch (error) {
-        const err = new Error(`Invalid JSONL at ${filePath}:${index + 1}: ${error.message}`);
-        err.code = 'INVALID_JSONL';
-        throw err;
+function parseTaskYaml(text) {
+  const task = { approval_summary: {} };
+  const lines = text.split(/\r?\n/);
+  let section = null;
+  let listKey = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\s+#.*$/, '');
+    if (!line.trim()) continue;
+
+    const top = line.match(/^([A-Za-z0-9_.-]+):\s*(.*?)\s*$/);
+    if (top) {
+      section = top[1] === 'approval_summary' ? 'approval_summary' : null;
+      listKey = null;
+      if (top[1] !== 'approval_summary') {
+        task[top[1]] = parseScalar(top[2]);
       }
-    });
+      continue;
+    }
+
+    if (section === 'approval_summary') {
+      const nested = line.match(/^\s{2}([A-Za-z0-9_.-]+):\s*(.*?)\s*$/);
+      if (nested) {
+        const key = nested[1];
+        const value = nested[2].trim() === '' ? [] : parseScalar(nested[2]);
+        task.approval_summary[key] = value;
+        listKey = Array.isArray(value) ? key : null;
+        continue;
+      }
+      const listItem = line.match(/^\s{4}-\s*(.*?)\s*$/);
+      if (listItem && listKey) {
+        task.approval_summary[listKey].push(listItem[1]);
+      }
+    }
+  }
+
+  return task;
 }
 
 function classifyPath(rawPath, repoRoot) {
@@ -157,110 +210,89 @@ function isSecretPath(rawPath) {
   return SECRET_PATTERNS.some((pattern) => pattern.test(rawPath));
 }
 
-function eventPayload(event) {
-  return event && typeof event.payload === 'object' && event.payload !== null ? event.payload : {};
+function normalizePattern(pattern) {
+  return normalizeForCompare(pattern).replace(/\//g, path.sep);
 }
 
-function gateStatus(events, gateId) {
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    const event = events[i];
-    const payload = eventPayload(event);
-    if (event.event_type === 'gate_status_change' && payload.gate_id === gateId) {
-      return payload.status || null;
-    }
-    if (event.event_type === 'approval_decision' && payload.gate_id === gateId) {
-      return payload.status || null;
-    }
-  }
-  return null;
-}
-
-function capabilityAliases(capability) {
-  return CAPABILITY_EFFECT_ALIASES[capability] || [capability];
-}
-
-function hasCapabilityInApproval(approval, capability) {
-  const payload = eventPayload(approval);
-  const aliases = capabilityAliases(capability);
-  const effects = payload.effects || {};
-  const capabilities = Array.isArray(payload.capabilities) ? payload.capabilities : [];
-  return aliases.some((alias) => effects[alias] === true || capabilities.includes(alias));
-}
-
-function targetPathCovered(approval, pathInfo) {
-  if (!pathInfo) return true;
-  const payload = eventPayload(approval);
-  const targetPaths = payload.target_paths || {};
-  const allowed = Array.isArray(targetPaths.allowed) ? targetPaths.allowed : [];
-  if (allowed.length === 0) return false;
-
+function pathMatchesAllowedPattern(pathInfo, allowedPatterns) {
+  if (!pathInfo) return allowedPatterns.length === 0;
   const relative = normalizeForCompare(pathInfo.relative_path);
-  return allowed.some((pattern) => {
-    const normalizedPattern = normalizeForCompare(pattern);
+  return allowedPatterns.some((pattern) => {
+    const normalizedPattern = normalizePattern(pattern);
     if (normalizedPattern.endsWith(`${path.sep}**`)) {
       const prefix = normalizedPattern.slice(0, -3);
-      return relative === prefix || relative.startsWith(`${prefix}${path.sep}`);
-    }
-    if (normalizedPattern.endsWith('/**')) {
-      const prefix = normalizedPattern.slice(0, -3).replace(/\//g, path.sep);
       return relative === prefix || relative.startsWith(`${prefix}${path.sep}`);
     }
     return relative === normalizedPattern;
   });
 }
 
-function invalidatedApprovalIds(events) {
-  const ids = new Set();
-  for (const event of events) {
-    if (event.event_type !== 'invalidation') continue;
-    const payload = eventPayload(event);
-    if (payload.approval_event_id) ids.add(payload.approval_event_id);
-    if (payload.approval_id) ids.add(payload.approval_id);
+function approvalMarkdownStatus(taskRoot) {
+  const approvalPath = taskRoot ? path.join(taskRoot, 'implementation-approval.md') : null;
+  const text = readTextIfExists(approvalPath);
+  if (!text) return { ok: false, reason: 'Implementation approval summary is missing.' };
+  const missing = APPROVAL_HEADINGS.filter((heading) => !text.includes(heading));
+  if (missing.length > 0) {
+    return { ok: false, reason: `Implementation approval summary is incomplete: ${missing.join(', ')}` };
   }
-  return ids;
-}
-
-function findApproval(events, capability, pathInfo) {
-  const invalidated = invalidatedApprovalIds(events);
-  return events.find((event) => {
-    if (event.event_type !== 'approval_decision') return false;
-    const payload = eventPayload(event);
-    if (payload.status !== 'approved') return false;
-    if (invalidated.has(event.event_id) || invalidated.has(payload.approval_id)) return false;
-    return hasCapabilityInApproval(event, capability) && targetPathCovered(event, pathInfo);
-  });
+  return { ok: true, path: approvalPath };
 }
 
 function decision(decisionValue, reason, extras = {}) {
   return {
     decision_id: `decision-${Date.now()}`,
-    schema_version: '0.1.0',
+    schema_version: '0.2.0',
     decision: decisionValue,
     reason,
     required_next_action: extras.required_next_action || { type: decisionValue === 'allow' ? 'run_verify' : 'ask_user' },
-    matched_events: extras.matched_events || [],
+    matched_events: [],
     path_policy_result: extras.path_policy_result || null,
     capabilities: extras.capabilities || {},
   };
 }
 
+function dangerousCapabilityAllowed(capability, task, pathInfo) {
+  const summary = task.approval_summary || {};
+  const allowedCapabilities = Array.isArray(summary.allowed_capabilities) ? summary.allowed_capabilities : [];
+  const allowedPaths = Array.isArray(summary.allowed_paths) ? summary.allowed_paths : [];
+
+  if (summary.implementation !== 'approved') {
+    return { ok: false, reason: `No exact-scope approval found for ${capability}.` };
+  }
+  if (!allowedCapabilities.includes(capability)) {
+    return { ok: false, reason: `No exact-scope approval found for ${capability}.` };
+  }
+
+  const booleanField = BOOLEAN_CAPABILITY_FIELDS[capability];
+  if (booleanField && summary[booleanField] !== true) {
+    return { ok: false, reason: `Capability ${capability} is locked in approval_summary.` };
+  }
+
+  if (capability.startsWith('file.write.') && !pathMatchesAllowedPattern(pathInfo, allowedPaths)) {
+    return { ok: false, reason: `Requested path is outside approved paths for ${capability}.` };
+  }
+
+  return { ok: true };
+}
+
 function decide(input) {
   const repoRoot = path.resolve(input.repoRoot || process.cwd());
-  const taskDir = input.taskDir ? path.resolve(repoRoot, input.taskDir) : null;
-  const eventsPath = input.eventsPath || (taskDir ? path.join(taskDir, 'events.jsonl') : null);
+  const taskDir = input.taskRoot ? path.resolve(input.taskRoot) : (input.taskDir ? path.resolve(repoRoot, input.taskDir) : null);
   const taskYamlPath = input.taskYamlPath || (taskDir ? path.join(taskDir, 'task.yaml') : null);
   const capabilityCatalogPath = input.capabilityCatalogPath || path.join(repoRoot, 'harness', 'contracts', 'capability-catalog.yaml');
   const capabilityCatalog = readTextIfExists(capabilityCatalogPath);
 
   const task = parseTaskYaml(readTextIfExists(taskYamlPath));
-  const events = readJsonl(eventsPath);
   const capability = input.capability;
   const pathInfo = classifyPath(input.path, repoRoot);
+  const currentGate = task.current_gate || '';
 
   const base = {
     requested_action: input.action || null,
     capability,
+    task_id: task.task_id || null,
     task_type: task.task_type || task.type || null,
+    current_gate: currentGate,
     path_policy_result: pathInfo,
   };
 
@@ -289,22 +321,23 @@ function decide(input) {
   }
 
   if (capability === 'file.read.project') {
-    const researchStatus = gateStatus(events, 'research');
-    if (researchStatus === 'open' || researchStatus === 'completed' || researchStatus === 'approved') {
-      return { ...base, ...decision('allow', 'Project read is allowed during research after grill.', { path_policy_result: pathInfo }) };
+    if (READ_ALLOWED_GATES.has(currentGate)) {
+      return { ...base, ...decision('allow', `Project read is allowed during current_gate ${currentGate}.`, { path_policy_result: pathInfo }) };
     }
     return { ...base, ...decision('deny', 'Project read before grill/research is denied.', { path_policy_result: pathInfo }) };
   }
 
   if (capability === 'network.web_research') {
-    const researchStatus = gateStatus(events, 'research');
-    if (researchStatus === 'open' || researchStatus === 'completed' || researchStatus === 'approved') {
+    if (currentGate === 'research') {
       return { ...base, ...decision('allow', 'General web research is allowed during research.', { path_policy_result: pathInfo }) };
     }
     return { ...base, ...decision('deny', 'Web research requires the research gate.', { path_policy_result: pathInfo }) };
   }
 
   if (capability === 'file.write.folder_skeleton') {
+    if (currentGate !== 'folder_skeleton') {
+      return { ...base, ...decision('deny', 'folder_skeleton writes require the folder_skeleton gate.', { path_policy_result: pathInfo }) };
+    }
     if (pathInfo && !pathInfo.is_within_modules) {
       return { ...base, ...decision('deny', 'Folder skeleton writes must stay under modules/.', { path_policy_result: pathInfo }) };
     }
@@ -312,6 +345,7 @@ function decide(input) {
     if (EXECUTABLE_SKELETON_EXTENSIONS.has(extension)) {
       return { ...base, ...decision('deny', 'folder_skeleton cannot create executable source, runtime config, tests, or fixtures.', { path_policy_result: pathInfo }) };
     }
+    return { ...base, ...decision('allow', 'Folder skeleton write allowed by current gate.', { path_policy_result: pathInfo }) };
   }
 
   if (capability === 'file.write.module' && pathInfo && !pathInfo.is_within_modules) {
@@ -325,11 +359,26 @@ function decide(input) {
     }
   }
 
-  const approval = findApproval(events, capability, pathInfo);
-  if (!approval) {
+  if (!DANGEROUS_CAPABILITIES.has(capability)) {
+    return { ...base, ...decision('deny', `No default allow rule for ${capability}.`, { path_policy_result: pathInfo }) };
+  }
+
+  const approval = dangerousCapabilityAllowed(capability, task, pathInfo);
+  if (!approval.ok) {
     return {
       ...base,
-      ...decision('deny', `No exact-scope approval found for ${capability}.`, {
+      ...decision('deny', approval.reason, {
+        path_policy_result: pathInfo,
+        required_next_action: { type: 'ask_user', gate_id: 'implementation', missing_capabilities: [capability] },
+      }),
+    };
+  }
+
+  const approvalMarkdown = approvalMarkdownStatus(taskDir);
+  if (!approvalMarkdown.ok) {
+    return {
+      ...base,
+      ...decision('deny', approvalMarkdown.reason, {
         path_policy_result: pathInfo,
         required_next_action: { type: 'ask_user', gate_id: 'implementation', missing_capabilities: [capability] },
       }),
@@ -338,8 +387,7 @@ function decide(input) {
 
   return {
     ...base,
-    ...decision('allow', `Allowed by approval event ${approval.event_id}.`, {
-      matched_events: [approval.event_id],
+    ...decision('allow', 'Allowed by task.yaml approval_summary derived from current chat approval.', {
       path_policy_result: pathInfo,
       capabilities: { [capability]: 'approved' },
     }),
@@ -349,13 +397,13 @@ function decide(input) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    process.stdout.write('Usage: node permission-decision.js --repo-root <path> --task <task-dir> --capability <capability> [--path <path>] [--action <action>]\n');
+    process.stdout.write('Usage: node permission-decision.js --repo-root <path> --task-root <task-dir> --capability <capability> [--path <path>] [--action <action>]\n');
     return;
   }
   const result = decide({
     repoRoot: args['repo-root'] || process.cwd(),
     taskDir: args.task,
-    eventsPath: args.events,
+    taskRoot: args['task-root'],
     taskYamlPath: args['task-yaml'],
     capability: args.capability,
     path: args.path,
@@ -373,5 +421,4 @@ module.exports = {
   decide,
   classifyPath,
   parseTaskYaml,
-  readJsonl,
 };

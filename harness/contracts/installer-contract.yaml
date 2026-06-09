@@ -26,11 +26,11 @@ ownership_classes:
   user_owned:
     update_strategy: never_overwrite
   generated_derived:
-    examples: [task.yaml, gate-ledger.md projection, index files]
+    examples: [task.yaml current-state cache, index files]
     update_strategy: regenerate_from_canonical_when_explicit
-  append_only_canonical:
-    examples: [events.jsonl]
-    update_strategy: append_only_never_rewrite_without_repair_record
+  obsolete_managed:
+    examples: [legacy ledger template files]
+    update_strategy: prune_exact_obsolete_paths_with_backup
   local_artifact:
     examples: [harness/artifacts/local/**]
     update_strategy: gitignored_do_not_publish

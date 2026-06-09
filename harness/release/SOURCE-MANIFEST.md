@@ -5,7 +5,7 @@ This manifest describes the release candidate source surfaces for Jjamppong Harn
 ## Canonical Surfaces
 
 - `harness/contracts/`: machine-readable gate, permission, path, installer, and task contracts.
-- `harness/contracts/artifact-registry.yaml`: artifact role, language, lifecycle, and receipt policy.
+- `harness/contracts/artifact-registry.yaml`: artifact role, language, lifecycle, and state/content check policy.
 - `harness/contracts/skill-artifact-map.yaml`: gate-to-artifact read/write routing contract.
 - `tests/contracts/`: regression tests that prove the contracts stay enforced.
 - `harness/permission/`: PermissionDecision MVP.

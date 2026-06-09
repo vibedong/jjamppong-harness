@@ -53,7 +53,6 @@ function Get-RegressionRecords {
 $requiredFiles = @(
   'harness/contracts/capability-catalog.yaml',
   'harness/contracts/gate-contract-matrix.yaml',
-  'harness/contracts/ledger-event.schema.yaml',
   'harness/contracts/permission-decision.schema.yaml',
   'harness/contracts/path-policy.schema.yaml',
   'harness/contracts/task.schema.yaml',
@@ -70,7 +69,6 @@ $catalog = Read-Text 'tests/contracts/regression-catalog.yaml'
 $coverage = Read-Text 'tests/contracts/verify-coverage-map.yaml'
 $capabilities = Read-Text 'harness/contracts/capability-catalog.yaml'
 $gates = Read-Text 'harness/contracts/gate-contract-matrix.yaml'
-$ledgerSchema = Read-Text 'harness/contracts/ledger-event.schema.yaml'
 $permissionSchema = Read-Text 'harness/contracts/permission-decision.schema.yaml'
 $pathPolicy = Read-Text 'harness/contracts/path-policy.schema.yaml'
 $taskSchema = Read-Text 'harness/contracts/task.schema.yaml'
@@ -142,10 +140,9 @@ foreach ($token in $requiredGateTokens) {
   Assert-Contract ($gates.Contains($token)) "Gate contract matrix missing gate token: $token"
 }
 
-Assert-Contract ($ledgerSchema.Contains('canonical_log: events.jsonl')) 'Ledger schema must make events.jsonl canonical.'
-Assert-Contract ($ledgerSchema.Contains('append_only: true')) 'Ledger schema must be append-only.'
-Assert-Contract ($taskSchema.Contains('human_projection: gate-ledger.md')) 'task schema must define gate-ledger.md as projection.'
-Assert-Contract ($taskSchema.Contains('cache_projection: task.yaml')) 'task schema must define task.yaml as cache projection.'
+Assert-Contract (-not $taskSchema.Contains('canonical_event_log: events.jsonl')) 'task schema must not require events.jsonl.'
+Assert-Contract (-not $taskSchema.Contains('human_projection: gate-ledger.md')) 'task schema must not require gate-ledger.md.'
+Assert-Contract ($taskSchema.Contains('approval_summary')) 'task schema must define approval_summary.'
 Assert-Contract ($permissionSchema.Contains('requested_action_fields')) 'Permission decision schema must model requested actions.'
 Assert-Contract ($permissionSchema.Contains('path_policy_result')) 'Permission decision schema must include path policy result.'
 Assert-Contract ($pathPolicy.Contains('detect_symlink')) 'Path policy must model symlink detection.'

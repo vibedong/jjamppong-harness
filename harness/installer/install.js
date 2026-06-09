@@ -17,6 +17,12 @@ const ROOT_ITEMS = [
   'proposals',
 ];
 
+const OBSOLETE_MANAGED_FILES = [
+  'harness/contracts/ledger-event.schema.yaml',
+  'harness/templates/task/events.jsonl.template',
+  'harness/templates/task/gate-ledger.md',
+];
+
 const EXCLUDED_DIRS = new Set([
   '.git',
   '.worktrees',
@@ -111,6 +117,25 @@ function copyManagedFile(templateRoot, targetRoot, relativePath, backupRoot, rol
   });
 }
 
+function pruneObsoleteManagedFiles(targetRoot, backupRoot, rollbackFiles, managedFiles) {
+  for (const relativePath of OBSOLETE_MANAGED_FILES) {
+    const targetPath = path.join(targetRoot, relativePath);
+    if (!fs.existsSync(targetPath)) continue;
+    const stat = fs.statSync(targetPath);
+    if (!stat.isFile()) continue;
+
+    const targetHash = sha256(targetPath);
+    backupExisting(targetRoot, relativePath, backupRoot, rollbackFiles);
+    fs.rmSync(targetPath, { force: true });
+    managedFiles.push({
+      path: relativePath.replace(/\\/g, '/'),
+      sha256: targetHash,
+      owner: 'harness-core',
+      action: 'pruned',
+    });
+  }
+}
+
 function writeNeutralTaskDirs(targetRoot) {
   for (const relative of [
     'harness/docs/tasks/active',
@@ -190,6 +215,8 @@ function installHarness(options) {
   const backupRoot = path.join(targetRoot, '.harness-backups', stamp);
   const rollbackFiles = [];
   const managedFiles = [];
+
+  pruneObsoleteManagedFiles(targetRoot, backupRoot, rollbackFiles, managedFiles);
 
   for (const rootItem of ROOT_ITEMS) {
     const sourcePath = path.join(templateRoot, rootItem);

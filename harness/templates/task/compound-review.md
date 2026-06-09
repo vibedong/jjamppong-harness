@@ -2,6 +2,8 @@
 
 이 문서는 `learning-capture.md`의 후보를 장기 지식으로 반영할지 결정합니다.
 
+이 문서는 startup, permission, verify, implementation gate의 필수 입력이 아닙니다.
+
 ## 검토 대상
 
 - 후보 파일: `learning-capture.md`

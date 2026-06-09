@@ -1,20 +1,20 @@
-version: 0.1.0
+version: 0.2.0
 name: jjamppong-harness-skill-artifact-map
 notes:
   - This file refines gate-contract-matrix.yaml with artifact-level read and write requirements.
-  - Missing or ambiguous artifact receipts fail closed for P0 gates.
+  - Missing or starter-only artifacts fail by state/content checks.
   - It does not grant capability approvals.
 
 gates:
   install:
-    must_write:
+    must_write: []
 
   intake:
     must_read:
       - user_prompt
     must_write:
-      - events_log
       - task_yaml
+      - planning_current_context
     must_not_read:
       - project_source_before_approval
 
@@ -22,37 +22,42 @@ gates:
     must_read:
       - user_prompt
       - prior_user_answers
+      - task_yaml
     must_write:
       - planning_grill_summary
-      - events_log
-    must_not_read:
-      - project_source_before_approval
+      - task_yaml
 
   research:
     must_read:
+      - task_yaml
       - planning_grill_summary
     must_write:
       - planning_research_summary
-      - events_log
+      - task_yaml
 
   compound_lookup:
     must_read:
+      - task_yaml
       - compound_state
       - solutions_index
     optional_read:
       - selected_relevant_solutions
     must_write:
       - planning_compound_lookup
+      - task_yaml
 
   architecture_orientation:
     must_read:
+      - task_yaml
       - planning_grill_summary
       - planning_research_summary
     must_write:
       - planning_architecture_orientation
+      - task_yaml
 
   prd:
     must_read:
+      - task_yaml
       - planning_grill_summary
       - planning_research_summary
     optional_read:
@@ -60,86 +65,105 @@ gates:
       - planning_architecture_orientation
     must_write:
       - planning_prd
+      - task_yaml
 
   issues:
     must_read:
+      - task_yaml
       - planning_prd
     must_write:
       - planning_issues
+      - task_yaml
 
   module_structure:
     must_read:
+      - task_yaml
       - planning_prd
       - planning_issues
     must_write:
       - planning_module_structure
+      - task_yaml
 
   writing_plan:
     must_read:
+      - task_yaml
       - planning_current_context
       - planning_prd
       - planning_issues
       - planning_module_structure
     must_write:
       - planning_writing_plan
+      - task_yaml
 
   plan_review:
     must_read:
+      - task_yaml
       - planning_writing_plan
     must_write:
       - planning_plan_review
+      - task_yaml
 
   folder_skeleton:
     must_read:
+      - task_yaml
       - planning_module_structure
     must_write:
-      - events_log
+      - task_yaml
 
   implementation:
     must_read:
+      - task_yaml
       - planning_prd
       - planning_issues
       - planning_module_structure
       - planning_writing_plan
       - planning_plan_review
-      - events_log
     must_write:
-      - events_log
+      - implementation_approval
+      - task_yaml
 
   work:
     must_read:
-      - events_log
+      - task_yaml
+      - implementation_approval
     must_write:
-      - events_log
+      - task_yaml
 
   verification:
     must_read:
-      - events_log
+      - task_yaml
+      - implementation_approval
     must_write:
       - verification
+      - task_yaml
 
   acceptance:
     must_read:
+      - task_yaml
       - verification
     must_write:
       - acceptance
+      - task_yaml
 
   compound_capture:
     must_read:
+      - task_yaml
       - verification
-      - active_task_events
     optional_read:
       - acceptance
     must_write:
       - learning_capture
+      - task_yaml
 
   compound_review:
     must_read:
+      - task_yaml
       - learning_capture
       - compound_state
       - solutions_index
     must_write:
       - compound_review
+      - task_yaml
     may_write_long_term:
       - solutions_index
       - selected_relevant_solutions
@@ -147,21 +171,24 @@ gates:
 
   proposal:
     must_read:
-      - active_task_events
+      - task_yaml
+      - planning_current_context
     must_write:
-      - events_log
+      - task_yaml
 
   archive:
     must_read:
+      - task_yaml
       - verification
       - learning_capture
     optional_read:
       - compound_review
     must_write:
-      - events_log
+      - task_yaml
 
   handoff:
     must_read:
-      - active_task_events
+      - task_yaml
+      - planning_current_context
     must_write:
       - handoff_summary

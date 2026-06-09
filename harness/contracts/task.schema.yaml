@@ -1,9 +1,11 @@
-version: 0.1.0
+version: 0.2.0
 name: task-schema
 
-canonical_event_log: events.jsonl
-human_projection: gate-ledger.md
-cache_projection: task.yaml
+state_surface: task.yaml
+approval_surface: implementation-approval.md
+verification_surface: verification.md
+handoff_surface: handoff.md
+stores_history: false
 
 allowed_task_types:
   - install
@@ -15,6 +17,37 @@ allowed_task_types:
   - harness_update
   - knowledge_maintenance
   - archive_maintenance
+
+task_yaml:
+  status: current_state_cache
+  may_be_regenerated: true
+  grants_permission_alone: false
+  required_fields:
+    - task_id
+    - task_type
+    - status
+    - current_gate
+    - created_at
+    - updated_at
+    - next_action
+    - approval_summary
+  approval_summary:
+    status: machine_readable_cache_derived_from_current_chat_approval
+    grants_permission_alone: false
+    requires_human_approval_surface_for_dangerous_capabilities: true
+    required_fields:
+      - implementation
+      - allowed_capabilities
+      - allowed_paths
+      - package_install
+      - network_live_target
+      - git_commit
+      - git_push
+      - approval_source
+    implementation_values:
+      - locked
+      - approved
+      - revoked
 
 task_types:
   module_bootstrap:
@@ -77,12 +110,18 @@ task_types:
     forbidden:
       - harness_core_rule_change
 
-projections:
-  task_yaml:
-    status: derived_cache
-    may_be_regenerated: true
-    cannot_grant_permission: true
-  gate_ledger_md:
-    status: human_projection
-    may_be_regenerated: true
-    cannot_grant_permission_without_events: true
+state_files:
+  planning_current_context:
+    path: planning/00-current-planning-context.md
+    status: human_readable_hot_context
+    max_preferred_size: 12KB
+  implementation_approval:
+    path: implementation-approval.md
+    status: human_readable_approval_summary
+    cannot_grant_permission_without_task_yaml_approval_summary: true
+  verification:
+    path: verification.md
+    status: human_readable_verification_summary
+  handoff:
+    path: handoff.md
+    status: human_readable_next_chat_summary

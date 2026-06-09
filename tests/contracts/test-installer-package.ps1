@@ -86,6 +86,16 @@ try {
   $second = Select-ResultObject (Invoke-JsonCommand -CommandArgs @($cli, 'install', '--target', $target, '--template', $RepoRoot))
   Assert-Check ($second.ok -eq $true) 'Second install should remain idempotent enough to verify.'
   Assert-InstalledRoot -Target $target
+
+  New-Item -ItemType File -Path (Join-Path $target 'harness\contracts\ledger-event.schema.yaml') -Force | Out-Null
+  New-Item -ItemType File -Path (Join-Path $target 'harness\templates\task\events.jsonl.template') -Force | Out-Null
+  New-Item -ItemType File -Path (Join-Path $target 'harness\templates\task\gate-ledger.md') -Force | Out-Null
+
+  $pruned = Select-ResultObject (Invoke-JsonCommand -CommandArgs @($cli, 'install', '--target', $target, '--template', $RepoRoot))
+  Assert-Check ($pruned.ok -eq $true) 'Install after legacy ledger files should verify.'
+  Assert-Check (-not (Test-Path -LiteralPath (Join-Path $target 'harness\contracts\ledger-event.schema.yaml'))) 'installer update must prune legacy ledger-event schema.'
+  Assert-Check (-not (Test-Path -LiteralPath (Join-Path $target 'harness\templates\task\events.jsonl.template'))) 'installer update must prune legacy events template.'
+  Assert-Check (-not (Test-Path -LiteralPath (Join-Path $target 'harness\templates\task\gate-ledger.md'))) 'installer update must prune legacy gate ledger template.'
 }
 finally {
   Remove-Item -LiteralPath $target -Recurse -Force

@@ -1,10 +1,11 @@
-version: 0.1.0
+version: 0.2.0
 name: jjamppong-harness-artifact-registry
 notes:
   - Artifacts describe durable planning, permission, verification, and compound surfaces.
   - Human-facing artifacts use the current user's language.
   - Machine-readable artifacts keep stable schema keys.
   - Dynamic task paths are relative to harness/docs/tasks/active/{task_id}/ unless root_relative is true.
+  - Required artifact checks are state and content checks, not event receipts.
 
 artifacts:
   user_prompt:
@@ -13,8 +14,8 @@ artifacts:
     language: user
     lifecycle: conversation
     purpose: User's current request.
-    canonical: true
-    read_receipt_required: true
+    canonical: false
+    read_receipt_required: false
 
   prior_user_answers:
     path: chat:prior_user_answers
@@ -22,25 +23,7 @@ artifacts:
     language: user
     lifecycle: conversation
     purpose: User answers collected during the current gate.
-    canonical: true
-    read_receipt_required: true
-
-  events_log:
-    path: events.jsonl
-    audience: machine
-    language: stable_schema
-    lifecycle: active_task
-    purpose: Canonical gate, approval, permission, artifact, and verification event log.
-    canonical: true
-    read_receipt_required: false
-
-  active_task_events:
-    path: events.jsonl
-    audience: machine
-    language: stable_schema
-    lifecycle: active_task
-    purpose: Canonical event history for the active task.
-    canonical: true
+    canonical: false
     read_receipt_required: false
 
   task_yaml:
@@ -48,16 +31,16 @@ artifacts:
     audience: machine
     language: stable_schema
     lifecycle: active_task
-    purpose: Derived cache projection of current task status.
+    purpose: Current task state cache, including current_gate and approval_summary.
     canonical: false
     read_receipt_required: false
 
-  gate_ledger:
-    path: gate-ledger.md
+  implementation_approval:
+    path: implementation-approval.md
     audience: human
     language: user
     lifecycle: active_task
-    purpose: Human-readable projection of approvals and gate state.
+    purpose: Human-readable exact-scope approval summary derived from current chat approval.
     canonical: false
     read_receipt_required: false
 
@@ -66,9 +49,9 @@ artifacts:
     audience: human
     language: user
     lifecycle: active_task
-    purpose: Compiled planning context with source hashes.
+    purpose: Short hot-context summary with decisions, open questions, and next action.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_grill_summary:
     path: planning/01-grill-summary.md
@@ -77,7 +60,7 @@ artifacts:
     lifecycle: active_task
     purpose: Summary of user intent questions and answers.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_research_summary:
     path: planning/02-research-summary.md
@@ -86,7 +69,7 @@ artifacts:
     lifecycle: active_task
     purpose: Evidence and research summary.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_compound_lookup:
     path: planning/02b-compound-lookup.md
@@ -95,7 +78,7 @@ artifacts:
     lifecycle: active_task
     purpose: Relevant previous learning selected for the current task.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_architecture_orientation:
     path: planning/02c-architecture-orientation.md
@@ -104,7 +87,7 @@ artifacts:
     lifecycle: active_task
     purpose: Plain-language technical orientation.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_prd:
     path: planning/03-prd.md
@@ -113,7 +96,7 @@ artifacts:
     lifecycle: active_task
     purpose: Approved product requirements.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_issues:
     path: planning/04-issues.md
@@ -122,7 +105,7 @@ artifacts:
     lifecycle: active_task
     purpose: Work breakdown from the approved PRD.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_module_structure:
     path: planning/05-module-structure.md
@@ -131,16 +114,16 @@ artifacts:
     lifecycle: active_task
     purpose: Approved module and folder structure.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_writing_plan:
     path: planning/06-writing-plan.md
     audience: human
     language: user
     lifecycle: active_task
-    purpose: Implementation plan.
+    purpose: Implementation plan with checkbox steps.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   planning_plan_review:
     path: planning/07-plan-review.md
@@ -149,7 +132,7 @@ artifacts:
     lifecycle: active_task
     purpose: Review of the implementation plan.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   verification:
     path: verification.md
@@ -158,7 +141,7 @@ artifacts:
     lifecycle: active_task
     purpose: Verification commands, expected results, actual results, and risk status.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   acceptance:
     path: acceptance.md
@@ -167,7 +150,7 @@ artifacts:
     lifecycle: active_task
     purpose: User acceptance, deferral, or blocked status.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   learning_capture:
     path: learning-capture.md
@@ -176,7 +159,7 @@ artifacts:
     lifecycle: active_task
     purpose: Candidate reusable lessons classified during the task.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   compound_review:
     path: compound-review.md
@@ -185,7 +168,7 @@ artifacts:
     lifecycle: active_task
     purpose: Review decision for promoting learning candidates into long-term solutions.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   compound_state:
     path: harness/state/compound.md
@@ -195,7 +178,7 @@ artifacts:
     lifecycle: long_term
     purpose: Short index of reusable learning documents.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   solutions_index:
     path: harness/docs/solutions/index.md
@@ -205,7 +188,7 @@ artifacts:
     lifecycle: long_term
     purpose: Long-term solution index.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   selected_relevant_solutions:
     path: harness/docs/solutions/*.md
@@ -215,7 +198,7 @@ artifacts:
     lifecycle: long_term
     purpose: Narrowly selected solution summaries relevant to the current task.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   handoff_summary:
     path: handoff.md
@@ -225,7 +208,7 @@ artifacts:
     lifecycle: project
     purpose: Next-chat handoff summary and restart prompt.
     canonical: false
-    read_receipt_required: true
+    read_receipt_required: false
 
   project_source_before_approval:
     path: project_source:before_grill_or_approval

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
 const REQUIRED_ROOT_ITEMS = [
   'AGENTS.md',
@@ -20,7 +20,6 @@ const REQUIRED_ROOT_ITEMS = [
 const REQUIRED_CONTRACTS = [
   'harness/contracts/capability-catalog.yaml',
   'harness/contracts/gate-contract-matrix.yaml',
-  'harness/contracts/ledger-event.schema.yaml',
   'harness/contracts/permission-decision.schema.yaml',
   'harness/contracts/path-policy.schema.yaml',
   'harness/contracts/task.schema.yaml',
@@ -35,6 +34,40 @@ const REQUIRED_LOCK_FIELDS = [
   'commit_created',
   'push_performed',
   'managed_files',
+];
+
+const ALLOWED_GATES = new Set([
+  'intake',
+  'grill',
+  'research',
+  'compound_lookup',
+  'architecture_orientation',
+  'prd',
+  'issues',
+  'module_structure',
+  'writing_plan',
+  'plan_review',
+  'folder_skeleton',
+  'implementation',
+  'work',
+  'verification',
+  'acceptance',
+  'compound_capture',
+  'compound_review',
+  'proposal',
+  'archive',
+  'handoff',
+]);
+
+const APPROVAL_HEADINGS = [
+  '## 승인 질문',
+  '## 사용자 답변 요약',
+  '## 허용 작업',
+  '## 금지 작업',
+  '## 파일 범위',
+  '## 테스트 범위',
+  '## Capability 허용 여부',
+  '## 승인 만료 또는 철회 조건',
 ];
 
 function parseArgs(argv) {
@@ -59,22 +92,8 @@ function readText(filePath) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
-function readJsonl(filePath, failures) {
-  if (!fs.existsSync(filePath)) return [];
-  const lines = readText(filePath).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const events = [];
-  lines.forEach((line, index) => {
-    try {
-      events.push(JSON.parse(line));
-    } catch (error) {
-      failures.push({
-        id: 'invalid_jsonl',
-        severity: 'P0',
-        message: `Invalid JSONL in ${filePath}:${index + 1}: ${error.message}`,
-      });
-    }
-  });
-  return events;
+function sha256(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
 }
 
 function yamlScalar(text, key) {
@@ -96,468 +115,280 @@ function listDirectories(dirPath) {
   return fs.readdirSync(dirPath, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
 
-function parseContractSections(text, sectionName) {
-  const result = {};
-  const lines = text.split(/\r?\n/);
-  let inSection = false;
-  let currentKey = null;
-  let currentList = null;
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const rawLine = lines[index];
-    const withoutComment = rawLine.replace(/\s+#.*$/, '');
-    if (!withoutComment.trim()) continue;
-    const indent = withoutComment.match(/^\s*/)[0].length;
-    const trimmed = withoutComment.trim();
-
-    if (indent === 0 && trimmed === `${sectionName}:`) {
-      inSection = true;
-      currentKey = null;
-      currentList = null;
-      continue;
-    }
-
-    if (inSection && indent === 0 && trimmed.endsWith(':')) {
-      break;
-    }
-
-    if (!inSection) continue;
-
-    if (indent === 2 && /^[-A-Za-z0-9_]+:$/.test(trimmed)) {
-      currentKey = trimmed.slice(0, -1);
-      result[currentKey] = {};
-      currentList = null;
-      continue;
-    }
-
-    if (!currentKey) {
-      throw new Error(`Unsupported ${sectionName} contract shape at line ${index + 1}: ${rawLine}`);
-    }
-
-    if (indent === 4 && /^[-A-Za-z0-9_]+:$/.test(trimmed)) {
-      currentList = trimmed.slice(0, -1);
-      result[currentKey][currentList] = [];
-      continue;
-    }
-
-    if (indent === 4 && /^[-A-Za-z0-9_]+:\s+/.test(trimmed)) {
-      const [key, ...rest] = trimmed.split(':');
-      result[currentKey][key] = rest.join(':').trim().replace(/^["']|["']$/g, '');
-      currentList = null;
-      continue;
-    }
-
-    if (indent === 6 && trimmed.startsWith('- ')) {
-      if (!currentList || !Array.isArray(result[currentKey][currentList])) {
-        throw new Error(`List item without list owner at line ${index + 1}: ${rawLine}`);
-      }
-      result[currentKey][currentList].push(trimmed.slice(2).trim().replace(/^["']|["']$/g, ''));
-      continue;
-    }
-
-    throw new Error(`Unsupported ${sectionName} contract shape at line ${index + 1}: ${rawLine}`);
+function listFilesRecursive(dirPath) {
+  if (!fs.existsSync(dirPath)) return [];
+  const stat = fs.statSync(dirPath);
+  if (stat.isFile()) return [dirPath];
+  if (!stat.isDirectory()) return [];
+  const files = [];
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const child = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) files.push(...listFilesRecursive(child));
+    if (entry.isFile()) files.push(child);
   }
+  return files;
+}
 
+function repoRelative(root, filePath) {
+  return path.relative(root, filePath).replace(/\\/g, '/');
+}
+
+function parseManagedFiles(lockText) {
+  const result = new Map();
+  const blocks = lockText.split(/\n(?=\s{2}- path: )/);
+  for (const block of blocks) {
+    const pathMatch = block.match(/^\s{2}- path:\s*(.+?)\s*$/m);
+    const shaMatch = block.match(/^\s{4}sha256:\s*([a-f0-9]+)\s*$/m);
+    if (!pathMatch || !shaMatch) continue;
+    result.set(pathMatch[1].trim().replace(/\\/g, '/'), shaMatch[1].trim());
+  }
   return result;
 }
 
-function readArtifactRegistry(root) {
-  return parseContractSections(readText(path.join(root, 'harness', 'contracts', 'artifact-registry.yaml')), 'artifacts');
+function pushIssue(list, id, severity, message) {
+  list.push({ id, severity, message });
 }
 
-function readSkillArtifactMap(root) {
-  return parseContractSections(readText(path.join(root, 'harness', 'contracts', 'skill-artifact-map.yaml')), 'gates');
+function hasSubstantiveContent(text) {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const meaningful = lines.filter((line) => !line.startsWith('#') && !/^[-*]\s*$/.test(line));
+  return meaningful.join('\n').replace(/[-|:`\s]/g, '').length >= 12;
 }
 
-function currentGateFromTaskYaml(taskYaml) {
-  return yamlScalar(taskYaml, 'current_gate');
+function hasRequirementBullet(text) {
+  return /^[-*]\s+\S+/m.test(text) || /\b(requirement|요구|필수|해야|한다)\b/i.test(text);
 }
 
-function normalizeEventPath(value) {
-  return String(value || '').replace(/\\/g, '/');
+function hasIssueItem(text) {
+  return /^[-*]\s+\S+/m.test(text) || /\b(issue|작업|이슈|task)\b/i.test(text);
 }
 
-function artifactRelativePathFor(taskName, artifact) {
-  if (!artifact || !artifact.path) return null;
-  if (artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) return artifact.path;
-  if (artifact.root_relative === 'true' || artifact.root_relative === true) {
-    return normalizeEventPath(artifact.path);
+function hasModuleDecision(text) {
+  return /modules[\\/A-Za-z0-9_-]*|no module yet|모듈 없음|모듈 구조/m.test(text);
+}
+
+function hasWritingPlanSteps(text) {
+  return /^-\s+\[[ xX]\]\s+\S+/m.test(text);
+}
+
+function hasPlanReviewDecision(text) {
+  return /no blocking issues|blocking|decision|리뷰|차단|문제 없음|반영/m.test(text);
+}
+
+function hasVerificationResult(text) {
+  return /명령|command/i.test(text)
+    && /기대|expected/i.test(text)
+    && /실제|actual/i.test(text)
+    && /통과|status|pass|fail/i.test(text);
+}
+
+function hasHandoffPrompt(text) {
+  return /handoff\.md|다음 채팅|이어.*진행|next-chat/i.test(text);
+}
+
+function verifyRequiredArtifact(taskRoot, relativePath, checker, failures, message) {
+  const fullPath = path.join(taskRoot, relativePath);
+  if (!fs.existsSync(fullPath)) {
+    pushIssue(failures, 'gate_required_artifact_missing', 'P0', `${message}: missing ${relativePath}`);
+    return;
   }
-  return normalizeEventPath(path.join('harness', 'docs', 'tasks', 'active', taskName, artifact.path));
-}
-
-function artifactAbsolutePathFor(root, taskName, artifact) {
-  const relativePath = artifactRelativePathFor(taskName, artifact);
-  if (!relativePath || relativePath.startsWith('chat:') || relativePath.startsWith('project_source:')) return relativePath;
-  return path.join(root, ...relativePath.split('/'));
-}
-
-function sha256File(filePath) {
-  return `sha256:${crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')}`;
-}
-
-function artifactReadReceipt(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath) {
-  return events.find((event) => {
-    const payload = event.payload || {};
-    if (event.task_id !== taskName) return false;
-    if (event.event_type !== 'artifact_read') return false;
-    if (payload.gate_id !== gateId || payload.artifact_id !== artifactId) return false;
-    if (normalizeEventPath(payload.path) !== expectedRelativePath) return false;
-    if (artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) {
-      return payload.proof_type === 'pseudo_artifact_marker' && typeof payload.hash === 'string' && payload.hash.length > 0;
-    }
-    if (payload.proof_type !== 'file_sha256' || !fs.existsSync(expectedAbsolutePath)) return false;
-    return payload.hash === sha256File(expectedAbsolutePath);
-  });
-}
-
-function artifactWrittenEvent(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath) {
-  if (['events_log', 'active_task_events', 'task_yaml'].includes(artifactId)) {
-    return expectedAbsolutePath && fs.existsSync(expectedAbsolutePath);
-  }
-  return events.find((event) => {
-    const payload = event.payload || {};
-    if (event.task_id !== taskName) return false;
-    if (event.event_type !== 'artifact_written') return false;
-    if (payload.gate_id !== gateId || payload.artifact_id !== artifactId) return false;
-    if (normalizeEventPath(payload.path) !== expectedRelativePath) return false;
-    if (artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) {
-      return typeof payload.hash === 'string' && payload.hash.length > 0;
-    }
-    if (!fs.existsSync(expectedAbsolutePath)) return false;
-    return payload.hash === sha256File(expectedAbsolutePath);
-  });
-}
-
-function eventWritesSolution(event) {
-  const payload = event.payload || {};
-  const writtenPath = String(payload.path || payload.target_path || '');
-  return event.event_type === 'artifact_written'
-    && /^harness[\\/]docs[\\/]solutions[\\/].+\.md$/i.test(writtenPath);
-}
-
-function solutionWritePath(event) {
-  const payload = event.payload || {};
-  return String(payload.path || payload.target_path || '').replace(/\\/g, '/');
-}
-
-function solutionWriteCandidateRef(event) {
-  const payload = event.payload || {};
-  return String(payload.candidate_ref || '');
-}
-
-function hasMatchingCompoundReviewDecision(events, writeIndex, writePath, candidateRef) {
-  return events.slice(0, writeIndex).some((event) => {
-    const payload = event.payload || {};
-    return event.event_type === 'compound_review_decision'
-      && ['promote', 'merge_existing'].includes(payload.decision)
-      && typeof candidateRef === 'string'
-      && candidateRef.length > 0
-      && payload.candidate_ref === candidateRef
-      && typeof payload.user_approval_event_id === 'string'
-      && payload.user_approval_event_id.length > 0
-      && String(payload.target_solution_path || '').replace(/\\/g, '/') === writePath;
-  });
-}
-
-function learningCaptureCandidateCount(text) {
-  const match = text.match(/^candidate_count:\s*(\d+)\s*$/m);
-  return match ? Number(match[1]) : null;
-}
-
-function verifyEventHashChain(events, taskName, failures) {
-  for (let i = 0; i < events.length; i += 1) {
-    const event = events[i];
-    if (!event.event_id || !event.event_type || !event.event_hash) {
-      failures.push({
-        id: 'event_required_fields',
-        severity: 'P0',
-        message: `Task ${taskName} has an event missing event_id/event_type/event_hash.`,
-      });
-    }
-    if (i > 0 && event.previous_hash !== events[i - 1].event_hash) {
-      failures.push({
-        id: 'event_hash_chain_broken',
-        severity: 'P0',
-        message: `Task ${taskName} has broken event hash chain at event ${event.event_id || i}.`,
-      });
-    }
+  const text = readText(fullPath);
+  if (!hasSubstantiveContent(text) || (checker && !checker(text))) {
+    pushIssue(failures, 'gate_artifact_content_insufficient', 'P0', `${message}: insufficient ${relativePath}`);
   }
 }
 
-function verifyArtifactRoutingForTask(root, taskName, taskYaml, events, failures, warnings) {
-  const registryPath = path.join(root, 'harness', 'contracts', 'artifact-registry.yaml');
-  const mapPath = path.join(root, 'harness', 'contracts', 'skill-artifact-map.yaml');
-  if (!fs.existsSync(registryPath) || !fs.existsSync(mapPath)) {
-    failures.push({
-      id: 'missing_contract',
-      severity: 'P0',
-      message: 'Missing artifact routing contract file.',
-    });
+function verifyImplementationApproval(taskRoot, failures) {
+  const approvalPath = path.join(taskRoot, 'implementation-approval.md');
+  if (!fs.existsSync(approvalPath)) {
+    pushIssue(failures, 'implementation_approval_missing', 'P0', 'implementation gate requires implementation-approval.md.');
+    return;
+  }
+  const text = readText(approvalPath);
+  const missing = APPROVAL_HEADINGS.filter((heading) => !text.includes(heading));
+  if (missing.length > 0 || !/file\.|git\.|package\.|network\.|허용|금지/.test(text)) {
+    pushIssue(failures, 'gate_artifact_content_insufficient', 'P0', 'implementation-approval.md is missing required headings or capability scope.');
+  }
+}
+
+function verifyCurrentGateArtifacts(root, taskName, taskRoot, taskYaml, failures) {
+  const gate = yamlScalar(taskYaml, 'current_gate');
+  if (!gate) return;
+  if (!ALLOWED_GATES.has(gate)) {
+    pushIssue(failures, 'task_gate_unknown', 'P0', `Task ${taskName} has unknown current_gate: ${gate}.`);
     return;
   }
 
-  let registry;
-  let gates;
-  try {
-    registry = readArtifactRegistry(root);
-    gates = readSkillArtifactMap(root);
-  } catch (error) {
-    failures.push({
-      id: 'artifact_contract_parse_failed',
-      severity: 'P0',
-      message: `Artifact routing contract parse failed: ${error.message}`,
-    });
-    return;
+  if (gate === 'writing_plan') {
+    verifyRequiredArtifact(taskRoot, 'planning/03-prd.md', hasRequirementBullet, failures, 'writing_plan gate requires PRD');
+    verifyRequiredArtifact(taskRoot, 'planning/04-issues.md', hasIssueItem, failures, 'writing_plan gate requires issues');
+    verifyRequiredArtifact(taskRoot, 'planning/05-module-structure.md', hasModuleDecision, failures, 'writing_plan gate requires module structure');
+    verifyRequiredArtifact(taskRoot, 'planning/06-writing-plan.md', hasWritingPlanSteps, failures, 'writing_plan gate requires writing plan');
   }
 
-  const gateId = currentGateFromTaskYaml(taskYaml);
-  if (!gateId) return;
-  if (!gates[gateId]) {
-    failures.push({
-      id: 'artifact_gate_unknown',
-      severity: 'P0',
-      message: `Task ${taskName} has current_gate ${gateId}, but skill-artifact-map.yaml does not define it.`,
-    });
-    return;
+  if (gate === 'implementation' || gate === 'work') {
+    verifyImplementationApproval(taskRoot, failures);
   }
 
-  const gate = gates[gateId];
-  const requiredReads = Array.isArray(gate.must_read) ? gate.must_read : [];
-  const requiredWrites = Array.isArray(gate.must_write) ? gate.must_write : [];
-  const forbiddenReads = Array.isArray(gate.must_not_read) ? gate.must_not_read : [];
-
-  for (const artifactId of [...requiredReads, ...requiredWrites, ...forbiddenReads]) {
-    if (!registry[artifactId]) {
-      failures.push({
-        id: 'artifact_contract_unknown_artifact',
-        severity: 'P0',
-        message: `Gate ${gateId} references unknown artifact id ${artifactId}.`,
-      });
-    }
+  if (gate === 'plan_review') {
+    verifyRequiredArtifact(taskRoot, 'planning/07-plan-review.md', hasPlanReviewDecision, failures, 'plan_review gate requires plan review');
   }
 
-  for (const artifactId of requiredReads) {
-    const artifact = registry[artifactId];
-    if (!artifact) continue;
-    if (artifact.read_receipt_required === 'false' || artifact.read_receipt_required === false) continue;
-    const expectedRelativePath = artifactRelativePathFor(taskName, artifact);
-    const expectedAbsolutePath = artifactAbsolutePathFor(root, taskName, artifact);
-    if (!artifactReadReceipt(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath)) {
-      failures.push({
-        id: 'artifact_read_receipt_missing',
-        severity: ['writing_plan', 'compound_lookup', 'implementation'].includes(gateId) ? 'P0' : 'P1',
-        message: `Task ${taskName} gate ${gateId} is missing a valid artifact_read receipt for ${artifactId}.`,
-      });
-    }
+  if (gate === 'verification') {
+    verifyRequiredArtifact(taskRoot, 'verification.md', hasVerificationResult, failures, 'verification gate requires verification result');
   }
 
-  for (const artifactId of forbiddenReads) {
-    const forbiddenRead = events.some((event) => {
-      const payload = event.payload || {};
-      return event.task_id === taskName
-        && event.event_type === 'artifact_read'
-        && payload.gate_id === gateId
-        && payload.artifact_id === artifactId;
-    });
-    if (forbiddenRead) {
-      failures.push({
-        id: 'artifact_forbidden_read',
-        severity: 'P0',
-        message: `Task ${taskName} gate ${gateId} read forbidden artifact ${artifactId}.`,
-      });
-    }
+  if (gate === 'handoff') {
+    verifyRequiredArtifact(path.resolve(root), 'handoff.md', hasHandoffPrompt, failures, 'handoff gate requires next-chat prompt');
   }
-
-  for (const artifactId of requiredWrites) {
-    const artifact = registry[artifactId];
-    if (!artifact || artifact.path.startsWith('chat:') || artifact.path.startsWith('project_source:')) continue;
-    const expectedRelativePath = artifactRelativePathFor(taskName, artifact);
-    const expectedAbsolutePath = artifactAbsolutePathFor(root, taskName, artifact);
-    if (!artifactWrittenEvent(events, taskName, gateId, artifactId, artifact, expectedRelativePath, expectedAbsolutePath)) {
-      failures.push({
-        id: 'artifact_required_write_missing',
-        severity: ['compound_capture', 'compound_review', 'verification'].includes(gateId) ? 'P0' : 'P1',
-        message: `Task ${taskName} gate ${gateId} is missing a valid artifact_written event for ${artifactId}.`,
-      });
-    }
-  }
-
-  if (gateId === 'compound_capture') {
-    const learningPath = path.join(root, 'harness', 'docs', 'tasks', 'active', taskName, 'learning-capture.md');
-    if (!fs.existsSync(learningPath)) {
-      failures.push({
-        id: 'learning_capture_missing',
-        severity: 'P0',
-        message: `Task ${taskName} is at compound_capture but learning-capture.md is missing.`,
-      });
-    } else {
-      const learningText = readText(learningPath);
-      const candidateCount = learningCaptureCandidateCount(learningText);
-      const learningCandidateEvents = events.filter((event) => event.event_type === 'learning_candidate');
-      if (candidateCount === null) {
-        failures.push({
-          id: 'learning_capture_stale_template',
-          severity: 'P0',
-          message: `Task ${taskName} learning-capture.md is missing candidate_count metadata.`,
-        });
-      } else if (candidateCount === 0 && !/^no_candidate_reason:\s*\S+/m.test(learningText)) {
-        failures.push({
-          id: 'learning_capture_no_candidate_reason_missing',
-          severity: 'P0',
-          message: `Task ${taskName} learning-capture.md has zero candidates without a no_candidate_reason.`,
-        });
-      } else if (candidateCount > learningCandidateEvents.length) {
-        failures.push({
-          id: 'learning_candidate_event_missing',
-          severity: 'P0',
-          message: `Task ${taskName} learning-capture.md candidate_count exceeds learning_candidate events.`,
-        });
-      }
-    }
-  }
-
-  events.forEach((event, index) => {
-    if (!eventWritesSolution(event)) return;
-    const writePath = solutionWritePath(event);
-    const candidateRef = solutionWriteCandidateRef(event);
-    if (!hasMatchingCompoundReviewDecision(events, index, writePath, candidateRef)) {
-      failures.push({
-        id: 'compound_review_required_for_solution_write',
-        severity: 'P0',
-        message: `Task ${taskName} wrote ${writePath} without a prior matching compound_review decision for candidate ${candidateRef || '(missing)'}.`,
-      });
-    }
-  });
-
-  void warnings;
 }
 
-function hasApprovalDecision(events) {
-  return events.some((event) => {
-    const payload = event.payload || {};
-    return event.event_type === 'approval_decision' && payload.status === 'approved';
-  });
+function verifyHotContext(root, taskRoot, failures, warnings) {
+  const files = [
+    path.join(root, 'AGENTS.md'),
+    path.join(root, 'harness', 'rules', 'workflow.md'),
+    path.join(taskRoot, 'task.yaml'),
+    path.join(taskRoot, 'planning', '00-current-planning-context.md'),
+  ];
+  const totalBytes = files.reduce((sum, filePath) => sum + Buffer.byteLength(readText(filePath), 'utf8'), 0);
+  if (totalBytes > 24 * 1024) {
+    pushIssue(failures, 'hot_context_too_large', 'P0', `Hot context is ${totalBytes} bytes, above 24KB hard limit.`);
+  } else if (totalBytes > 12 * 1024) {
+    pushIssue(warnings, 'hot_context_large_warning', 'P1', `Hot context is ${totalBytes} bytes, above 12KB warning limit.`);
+  }
+}
+
+function compoundReviewPromotes(taskRoot) {
+  const review = readText(path.join(taskRoot, 'compound-review.md'));
+  return review.includes('결정: promote')
+    && review.includes('반영할 장기 문서:')
+    && review.includes('사용자 승인 근거:');
+}
+
+function verifySolutionWrites(root, taskRoot, taskYaml, failures) {
+  const gate = yamlScalar(taskYaml, 'current_gate');
+  if (!['compound_capture', 'compound_review'].includes(gate)) return;
+
+  const lockText = readText(path.join(root, 'harness.lock.yaml'));
+  const managed = parseManagedFiles(lockText);
+  const solutionRoot = path.join(root, 'harness', 'docs', 'solutions');
+  const changed = listFilesRecursive(solutionRoot)
+    .filter((filePath) => filePath.endsWith('.md'))
+    .filter((filePath) => {
+      const relative = repoRelative(root, filePath);
+      const knownHash = managed.get(relative);
+      return !knownHash || knownHash !== sha256(filePath);
+    });
+
+  if (changed.length > 0 && !compoundReviewPromotes(taskRoot)) {
+    pushIssue(
+      failures,
+      'compound_review_required_for_solution_write',
+      'P0',
+      `Long-term solution writes require compound-review.md promote decision: ${changed.map((filePath) => repoRelative(root, filePath)).join(', ')}`
+    );
+  }
+}
+
+function verifyLiveCoreLedgerReferences(root, failures) {
+  for (const relative of [
+    'harness/contracts/ledger-event.schema.yaml',
+    'harness/templates/task/events.jsonl.template',
+    'harness/templates/task/gate-ledger.md',
+  ]) {
+    if (fs.existsSync(path.join(root, relative))) {
+      pushIssue(failures, 'ledger_reference_in_live_core', 'P0', `Live core must not include legacy ledger file: ${relative}`);
+    }
+  }
+
+  const rulesText = [
+    readText(path.join(root, 'AGENTS.md')),
+    readText(path.join(root, 'harness', 'rules', 'workflow.md')),
+    readText(path.join(root, 'harness', 'rules', 'rules.md')),
+  ].join('\n');
+  if (/events\.jsonl.*(required|canonical|source of truth|승인 기록 원본)|canonical.*events\.jsonl/i.test(rulesText)) {
+    pushIssue(failures, 'ledger_reference_in_live_core', 'P0', 'Live rules still describe events.jsonl as required or canonical.');
+  }
 }
 
 function verifyActiveTasks(root, failures, warnings) {
   const activeDir = path.join(root, 'harness', 'docs', 'tasks', 'active');
   if (!fs.existsSync(activeDir)) return;
 
-  const tasks = listDirectories(activeDir).filter((name) => name !== '.gitkeep');
+  const tasks = listDirectories(activeDir);
   if (tasks.length > 1) {
-    failures.push({
-      id: 'active_task_single_default',
-      severity: 'P0',
-      message: `Multiple active tasks found without parallel approval: ${tasks.join(', ')}`,
-    });
+    pushIssue(failures, 'active_task_single_default', 'P0', `Expected at most one active task, found ${tasks.length}: ${tasks.join(', ')}`);
   }
 
-  for (const task of tasks) {
-    const taskDir = path.join(activeDir, task);
-    const eventsPath = path.join(taskDir, 'events.jsonl');
-    const taskYamlPath = path.join(taskDir, 'task.yaml');
-    const events = readJsonl(eventsPath, failures);
-    verifyEventHashChain(events, task, failures);
+  for (const taskName of tasks) {
+    const taskRoot = path.join(activeDir, taskName);
+    const taskYamlPath = path.join(taskRoot, 'task.yaml');
+    const taskYaml = readText(taskYamlPath);
+    if (!taskYaml) {
+      pushIssue(failures, 'task_yaml_missing', 'P0', `Active task ${taskName} is missing task.yaml.`);
+      continue;
+    }
 
-    if (fs.existsSync(taskYamlPath)) {
-      const taskYaml = readText(taskYamlPath);
-      verifyArtifactRoutingForTask(root, task, taskYaml, events, failures, warnings);
-      if (/(approved|allowed|permission|capabilit)/i.test(taskYaml) && !hasApprovalDecision(events)) {
-        failures.push({
-          id: 'projection_without_canonical_event',
-          severity: 'P0',
-          message: `Task ${task} has task.yaml permission-like state without approval_decision in events.jsonl.`,
-        });
+    for (const legacy of ['events.jsonl', 'gate-ledger.md']) {
+      if (fs.existsSync(path.join(taskRoot, legacy))) {
+        pushIssue(warnings, 'legacy_ledger_artifact_present', 'P1', `Task ${taskName} has legacy ${legacy}; do not hot-read it.`);
       }
-    } else {
-      warnings.push({
-        id: 'active_task_missing_task_yaml',
-        severity: 'warning',
-        message: `Task ${task} has no task.yaml derived cache.`,
-      });
     }
+
+    verifyCurrentGateArtifacts(root, taskName, taskRoot, taskYaml, failures);
+    verifyHotContext(root, taskRoot, failures, warnings);
+    verifySolutionWrites(root, taskRoot, taskYaml, failures);
   }
 }
 
-function verifyHarnessLock(root, failures) {
-  const lockPath = path.join(root, 'harness.lock.yaml');
-  const text = readText(lockPath);
-  if (!text) return;
-
-  for (const field of REQUIRED_LOCK_FIELDS) {
-    if (!text.includes(field)) {
-      failures.push({
-        id: 'harness_lock_missing_field',
-        severity: 'P0',
-        message: `harness.lock.yaml missing required field: ${field}`,
-      });
-    }
-  }
-
-  for (const field of ['planning_started', 'github_repo_created', 'commit_created', 'push_performed']) {
-    const value = yamlBoolean(text, field);
-    if (value !== false) {
-      failures.push({
-        id: `${field}_during_install`,
-        severity: 'P0',
-        message: `harness.lock.yaml must record ${field}: false for install-only safety.`,
-      });
-    }
-  }
-}
-
-function verifyRoot(root) {
-  const projectRoot = path.resolve(root);
+function verifyRoot(rootPath) {
+  const root = path.resolve(rootPath || process.cwd());
   const failures = [];
   const warnings = [];
 
   for (const item of REQUIRED_ROOT_ITEMS) {
-    if (!fs.existsSync(path.join(projectRoot, item))) {
-      failures.push({
-        id: 'missing_root_item',
-        severity: 'P0',
-        message: `Missing required root item: ${item}`,
-      });
+    if (!fs.existsSync(path.join(root, item))) {
+      pushIssue(failures, 'missing_root_item', 'P0', `Missing required root item: ${item}`);
     }
   }
 
   for (const contract of REQUIRED_CONTRACTS) {
-    if (!fs.existsSync(path.join(projectRoot, contract))) {
-      failures.push({
-        id: 'missing_contract',
-        severity: 'P0',
-        message: `Missing contract file: ${contract}`,
-      });
+    if (!fs.existsSync(path.join(root, contract))) {
+      pushIssue(failures, 'missing_contract', 'P0', `Missing contract file: ${contract}`);
     }
   }
 
   for (const nested of ['jjamppong-harness', 'ourosuper-harness']) {
-    if (fs.existsSync(path.join(projectRoot, nested, 'AGENTS.md'))) {
-      failures.push({
-        id: 'nested_harness_folder',
-        severity: 'P0',
-        message: `Forbidden nested harness folder found: ${nested}/`,
-      });
+    if (fs.existsSync(path.join(root, nested, 'AGENTS.md'))) {
+      pushIssue(failures, 'nested_harness_folder', 'P0', `Forbidden nested harness folder present: ${nested}/`);
     }
   }
 
-  for (const secretName of ['.env', '.env.local', 'credentials.json', 'service-account.json', 'cookies.txt', 'token.txt']) {
-    if (fs.existsSync(path.join(projectRoot, secretName))) {
-      failures.push({
-        id: 'secret_file_present',
-        severity: 'P0',
-        message: `Secret-like file present at root and must not be read or published: ${secretName}`,
-      });
+  const lockText = readText(path.join(root, 'harness.lock.yaml'));
+  for (const field of REQUIRED_LOCK_FIELDS) {
+    if (!lockText.includes(field)) {
+      pushIssue(failures, 'harness_lock_missing_field', 'P0', `harness.lock.yaml missing field: ${field}`);
     }
   }
+  if (yamlBoolean(lockText, 'planning_started') === true) {
+    pushIssue(failures, 'planning_started_during_install', 'P0', 'Installer must not start planning.');
+  }
+  if (yamlBoolean(lockText, 'github_repo_created') === true) {
+    pushIssue(failures, 'github_repo_created_during_install', 'P0', 'Installer must not create GitHub repos by default.');
+  }
+  if (yamlBoolean(lockText, 'commit_created') === true) {
+    pushIssue(failures, 'commit_created_during_install', 'P0', 'Installer must not commit by default.');
+  }
+  if (yamlBoolean(lockText, 'push_performed') === true) {
+    pushIssue(failures, 'push_performed_during_install', 'P0', 'Installer must not push by default.');
+  }
 
-  verifyHarnessLock(projectRoot, failures);
-  verifyActiveTasks(projectRoot, failures, warnings);
+  verifyLiveCoreLedgerReferences(root, failures);
+  verifyActiveTasks(root, failures, warnings);
 
   return {
     ok: failures.length === 0,
-    root: projectRoot,
+    root,
     failures,
     warnings,
   };
@@ -565,7 +396,7 @@ function verifyRoot(root) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const root = args.root || process.cwd();
+  const root = path.resolve(args.root || process.cwd());
   const result = verifyRoot(root);
   if (args.json) {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
@@ -574,10 +405,7 @@ function main() {
   } else {
     process.stdout.write(`verify failed for ${result.root}\n`);
     for (const failure of result.failures) {
-      process.stdout.write(`FAIL ${failure.id}: ${failure.message}\n`);
-    }
-    for (const warning of result.warnings) {
-      process.stdout.write(`WARN ${warning.id}: ${warning.message}\n`);
+      process.stdout.write(`- ${failure.id}: ${failure.message}\n`);
     }
   }
   process.exitCode = result.ok ? 0 : 1;
@@ -589,4 +417,6 @@ if (require.main === module) {
 
 module.exports = {
   verifyRoot,
+  yamlScalar,
+  parseManagedFiles,
 };

@@ -29,10 +29,10 @@ foreach ($token in @(
   'harness/contracts/task.schema.yaml',
   'harness/contracts/permission-decision.schema.yaml',
   'harness/rules/workflow.md',
-  'active task events.jsonl',
   'active task task.yaml',
+  'planning/00-current-planning-context.md',
+  'implementation-approval.md',
   'PermissionDecision result',
-  'gate-ledger.md',
   'task.yaml'
 )) {
   Assert-Check ($agents.Contains($token)) "AGENTS.md missing source-of-truth token: $token"
@@ -57,11 +57,8 @@ foreach ($token in @(
   'Ask user-facing gate questions in the user''s language',
   'Human-facing artifacts use the user''s language',
   'Machine-readable artifacts keep stable schema keys',
-  'Static templates may use Korean starter copy',
-  'This phase does not add lifecycle-level localization',
   'git commit',
   'git push'
-  'artifact_read'
 )) {
   Assert-Check ($agents.Contains($token)) "AGENTS.md missing hard-rule token: $token"
 }
@@ -71,7 +68,11 @@ foreach ($forbidden in @(
   'New Project Request Trigger',
   'Full Workflow',
   'OuroSuper',
-  'ourosuper'
+  'ourosuper',
+  'active task events.jsonl',
+  'gate-ledger.md',
+  'artifact_read',
+  'canonical events'
 )) {
   Assert-Check (-not $agents.Contains($forbidden)) "AGENTS.md should not carry legacy/verbose token: $forbidden"
 }
@@ -87,31 +88,26 @@ foreach ($token in @(
   'npx jjamppong-harness@latest install --target 원하는-프로젝트-폴더',
   'GitHub 저장소 방식도 계속 사용할 수 있습니다',
   'vibedong/jjamppong-harness.git 설치해줘',
-  '설치할 위치는 내가 말한 프로젝트 폴더를 사용해줘',
   '설치 후 verify까지만 하고 멈춰',
   '기존 .git과 origin은 보존',
-  '설치할 폴더는 Codex에게 말할 때 같이 지정하면 됩니다',
   '설치 결과',
   '프로젝트 폴더/',
   'harness.lock.yaml',
   '잘못된 설치',
   '하네스가 막는 것',
   '실제 작업 흐름',
-  'plan review',
   'Gate id는 지금 어느 단계의 허락을 받는지 보여주는 이름표입니다',
-  'events.jsonl은 실제 승인 기록 원본입니다',
-  '작업이 진행되면 events.jsonl에 새 줄이 추가될 수 있습니다',
-  'gate-ledger.md는 사람이 읽기 쉽게 정리한 승인 기록입니다',
-  'task.yaml은 현재 상태를 빠르게 읽는 요약 파일입니다',
+  'task.yaml은 현재 작업 상태표입니다',
+  'planning/00-current-planning-context.md는 새 채팅이 먼저 읽는 짧은 요약입니다',
+  'implementation-approval.md는 구현 전 승인 범위입니다',
+  'verification.md는 검증 결과입니다',
   'handoff.md는 새 채팅으로 넘길 상태 요약입니다',
   'handoff.md를 만든 뒤에는 다음 채팅에 붙여넣을 프롬프트를 채팅 응답으로 출력합니다',
   '자동으로 배운 점을 남기는 방식',
   'learning-capture.md',
   'compound-review.md',
   'harness/docs/solutions/',
-  '필요한 문서를 읽었는지 확인하는 방식',
-  'artifact_read',
-  '실제 읽은 흔적을 남기게 하는 구조입니다',
+  '필요한 문서를 확인하는 방식',
   'Gate id: planning',
   'Gate id: implementation',
   'Gate id: handoff',
@@ -129,7 +125,11 @@ foreach ($forbidden in @(
   'npx github:vibedong/jjamppong-harness',
   'README is the source of truth',
   'README는 기준',
-  'plan_review가 끝나면 구현'
+  'plan_review가 끝나면 구현',
+  'events.jsonl은 실제 승인 기록 원본입니다',
+  'gate-ledger.md',
+  'artifact_read',
+  '실제 읽은 흔적'
 )) {
   Assert-Check (-not $readme.Contains($forbidden)) "README.md should not contain outdated token: $forbidden"
 }

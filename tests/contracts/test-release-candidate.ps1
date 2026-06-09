@@ -42,7 +42,8 @@ Assert-Check ($manifest.Contains('harness/docs/solutions/')) 'source manifest mu
 Assert-Check ($notes.Contains('0.1.0 Release Candidate')) 'release notes must name the release candidate.'
 Assert-Check ($notes.Contains('OuroSuper as an active workflow')) 'release notes must reject OuroSuper as active workflow.'
 Assert-Check ($notes.Contains('Structured compound learning classifier')) 'release notes must mention structured compound learning classification.'
-Assert-Check ($notes.Contains('Canonical user correction events')) 'release notes must mention canonical user correction events.'
+Assert-Check ($notes.Contains('Structured user correction summaries')) 'release notes must mention structured user correction summaries.'
+Assert-Check ($notes.Contains('Fresh task creation does not create legacy ledger artifacts')) 'release notes must document ledgerless task creation.'
 Assert-Check ($notes.Contains('compound_capture')) 'release notes must document compound_capture behavior.'
 
 $checksumPath = Join-Path $RepoRoot 'harness\release\CHECKSUMS.sha256'
@@ -55,7 +56,11 @@ if (Test-Path -LiteralPath $checksumPath) {
     'harness/contracts/gate-contract-matrix.yaml',
     'harness/contracts/artifact-registry.yaml',
     'harness/contracts/skill-artifact-map.yaml',
+    'harness/contracts/installer-contract.yaml',
+    'harness/contracts/permission-decision.schema.yaml',
+    'harness/contracts/task.schema.yaml',
     'harness/lifecycle/learning-classifier.js',
+    'harness/lifecycle/lifecycle.js',
     'harness/permission/permission-decision.js',
     'harness/verify/verify.js',
     'harness/installer/install.js',
@@ -73,6 +78,9 @@ if (Test-Path -LiteralPath $checksumPath) {
     Assert-Check ($checksumText.Contains($token)) "CHECKSUMS.sha256 missing release surface: $token"
   }
   Assert-Check (-not $checksumText.Contains('harness/release/CHECKSUMS.sha256')) 'CHECKSUMS.sha256 must not hash itself.'
+  Assert-Check (-not $checksumText.Contains('harness/contracts/ledger-event.schema.yaml')) 'CHECKSUMS.sha256 must not include removed ledger-event schema.'
+  Assert-Check (-not $checksumText.Contains('harness/templates/task/events.jsonl.template')) 'CHECKSUMS.sha256 must not include removed events template.'
+  Assert-Check (-not $checksumText.Contains('harness/templates/task/gate-ledger.md')) 'CHECKSUMS.sha256 must not include removed gate ledger template.'
   Assert-Check (-not $checksumText.Contains('harness/docs/tasks/active/2026-')) 'CHECKSUMS.sha256 must not include old active task artifacts.'
   Assert-Check (-not $checksumText.Contains('source-history/')) 'CHECKSUMS.sha256 must not include isolated source-history.'
 }
